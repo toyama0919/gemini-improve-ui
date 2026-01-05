@@ -2,8 +2,6 @@
 
 A Chrome extension that enhances Gemini Chat UI with powerful keyboard shortcuts.
 
-Original Tampermonkey script: [gemini-chat.js](https://github.com/toyama0919/tampermonkey/blob/master/gemini-chat.js)
-
 ## Features
 
 - Keyboard shortcuts for efficient navigation
