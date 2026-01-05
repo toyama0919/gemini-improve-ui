@@ -14,7 +14,9 @@ Original Tampermonkey script: [gemini-chat.js](https://github.com/toyama0919/tam
 
 ## Keyboard Shortcuts
 
-### Chat Screen
+All keyboard shortcuts can be customized via the extension's options page. The default shortcuts are listed below.
+
+### Chat Screen (Default)
 
 - `Insert`: Navigate to search screen
 - `Delete`: Toggle sidebar open/close
@@ -25,7 +27,7 @@ Original Tampermonkey script: [gemini-chat.js](https://github.com/toyama0919/tam
 - `Enter`: Open selected history
 - `Esc`: Exit history selection mode
 
-### Search Screen
+### Search Screen (Default)
 
 - `↑` / `↓`: Navigate through search results
 - `Enter`: Open selected search result
@@ -36,6 +38,16 @@ Original Tampermonkey script: [gemini-chat.js](https://github.com/toyama0919/tam
 - `↑` / `↓` (when textarea is empty): Focus on copy button
 - `↑` / `↓` (when copy button is focused): Move to other copy buttons
 - `Enter`: Click focused copy button
+
+## Customizing Shortcuts
+
+1. Right-click the extension icon in Chrome's toolbar
+2. Select "Options" from the menu
+3. Click on any shortcut field and press the desired key
+4. Click "Save Settings" to apply changes
+5. Reload the Gemini Chat page to use the new shortcuts
+
+You can reset all shortcuts to their default values by clicking the "Reset to Default" button on the options page.
 
 ## Installation
 
@@ -62,7 +74,10 @@ cd gemini-improve-ui
 ```
 gemini-improve-ui/
 ├── manifest.json      # Chrome extension manifest file
+├── options.html       # Settings page
+├── options.js         # Settings page script
 ├── src/               # Source code
+│   ├── settings.js    # Settings management
 │   ├── content.js     # Main entry point
 │   ├── search.js      # Search page functionality
 │   ├── history.js     # Chat history selection
@@ -80,6 +95,7 @@ gemini-improve-ui/
 
 The code is organized into modular files for better maintainability:
 
+- **settings.js**: Manages keyboard shortcut settings and storage
 - **search.js**: Handles search result navigation and selection
 - **history.js**: Manages chat history selection mode
 - **chat.js**: Manages textarea, sidebar, scrolling, and copy buttons
@@ -99,11 +115,3 @@ MIT License
 ## Author
 
 toyama0919
-
-## Changelog
-
-### v2.9 (Chrome Extension)
-
-- Converted from Tampermonkey script to Chrome extension
-- All features ported
-- Refactored code into modular files for better maintainability

@@ -3,7 +3,7 @@
 // Handle search page keyboard events
 function handleSearchPageKeydown(event) {
   // Select search results with up/down keys (works even when focus is on input field)
-  if (event.code === "ArrowUp" && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+  if (isShortcut(event, 'search.moveUp')) {
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
@@ -11,7 +11,7 @@ function handleSearchPageKeydown(event) {
     return true;
   }
 
-  if (event.code === "ArrowDown" && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+  if (isShortcut(event, 'search.moveDown')) {
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
@@ -20,7 +20,7 @@ function handleSearchPageKeydown(event) {
   }
 
   // Open selected search result with Enter key
-  if (event.code === "Enter" && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+  if (isShortcut(event, 'search.openResult')) {
     // Skip if IME is composing (Japanese input)
     if (event.isComposing) {
       return false;
@@ -35,20 +35,22 @@ function handleSearchPageKeydown(event) {
   }
 
   // Normal scroll processing for PageUp/PageDown only
-  if (event.code === "PageUp") {
+  if (isShortcut(event, 'search.scrollUp')) {
     event.preventDefault();
     window.scrollBy({ top: -window.innerHeight * 0.8, behavior: 'auto' });
     return true;
   }
 
-  if (event.code === "PageDown") {
+  if (isShortcut(event, 'search.scrollDown')) {
     event.preventDefault();
     window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'auto' });
     return true;
   }
 
   // Disable other shortcut keys (Home, End, Delete)
-  if (['Home', 'End', 'Delete'].includes(event.code)) {
+  const shortcuts = getShortcuts();
+  const chatKeys = Object.values(shortcuts.chat);
+  if (chatKeys.includes(event.code)) {
     return true;
   }
 
@@ -61,28 +63,28 @@ function handleChatPageKeydown(event) {
   const isInInput = event.target.matches('input, textarea, [contenteditable="true"]');
 
   // Insert: Navigate to search page
-  if (event.code === "Insert" && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+  if (isShortcut(event, 'chat.navigateToSearch')) {
     event.preventDefault();
     navigateToSearchPage();
     return true;
   }
 
   // Delete: Toggle sidebar open/close
-  if (event.code === "Delete" && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+  if (isShortcut(event, 'chat.toggleSidebar')) {
     event.preventDefault();
     toggleSidebar();
     return true;
   }
 
   // Home: Create new chat
-  if (event.code === "Home" && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+  if (isShortcut(event, 'chat.newChat')) {
     event.preventDefault();
     createNewChat();
     return true;
   }
 
   // End: Toggle between textarea ⇔ history selection mode
-  if (event.code === "End" && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+  if (isShortcut(event, 'chat.toggleHistoryMode')) {
     event.preventDefault();
 
     if (isHistorySelectionMode()) {
@@ -100,21 +102,21 @@ function handleChatPageKeydown(event) {
   }
 
   // Esc: Exit history selection mode
-  if (isHistorySelectionMode() && event.code === "Escape") {
+  if (isHistorySelectionMode() && isShortcut(event, 'chat.historyExit')) {
     event.preventDefault();
     exitHistorySelectionMode();
     return true;
   }
 
   // PageUp: Scroll chat area up
-  if (event.code === "PageUp") {
+  if (isShortcut(event, 'chat.scrollUp')) {
     event.preventDefault();
     scrollChatArea('up');
     return true;
   }
 
   // PageDown: Scroll chat area down
-  if (event.code === "PageDown") {
+  if (isShortcut(event, 'chat.scrollDown')) {
     event.preventDefault();
     scrollChatArea('down');
     return true;
@@ -122,15 +124,15 @@ function handleChatPageKeydown(event) {
 
   // Always process arrow keys and Enter in history selection mode
   if (isHistorySelectionMode()) {
-    if (event.code === "ArrowUp") {
+    if (isShortcut(event, 'chat.historyUp')) {
       event.preventDefault();
       moveHistoryUp();
       return true;
-    } else if (event.code === "ArrowDown") {
+    } else if (isShortcut(event, 'chat.historyDown')) {
       event.preventDefault();
       moveHistoryDown();
       return true;
-    } else if (event.code === "Enter") {
+    } else if (isShortcut(event, 'chat.historyOpen')) {
       event.preventDefault();
       openSelectedHistory();
       return true;
@@ -138,12 +140,13 @@ function handleChatPageKeydown(event) {
   }
 
   // Focus on copy button when up/down keys are pressed with empty textarea
-  if (!isHistorySelectionMode() && isInInput && (event.code === "ArrowUp" || event.code === "ArrowDown") && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+  if (!isHistorySelectionMode() && isInInput &&
+      (isShortcut(event, 'chat.historyUp') || isShortcut(event, 'chat.historyDown'))) {
     const textarea = document.querySelector('div[contenteditable="true"][role="textbox"]');
 
     if (textarea && textarea.textContent.trim() === '') {
       event.preventDefault();
-      const direction = event.code === "ArrowUp" ? 'up' : 'down';
+      const direction = isShortcut(event, 'chat.historyUp') ? 'up' : 'down';
       focusCopyButton(direction);
       return true;
     }
@@ -159,12 +162,12 @@ function handleChatPageKeydown(event) {
                          focusedElement.classList?.contains('copy-button'));
 
     if (isCopyButton) {
-      if (event.code === "ArrowUp" || event.code === "ArrowDown") {
+      if (isShortcut(event, 'chat.historyUp') || isShortcut(event, 'chat.historyDown')) {
         event.preventDefault();
-        const direction = event.code === "ArrowUp" ? 'up' : 'down';
+        const direction = isShortcut(event, 'chat.historyUp') ? 'up' : 'down';
         moveBetweenCopyButtons(direction);
         return true;
-      } else if (event.code === "Enter") {
+      } else if (isShortcut(event, 'chat.historyOpen')) {
         // Explicitly click copy button with Enter key
         event.preventDefault();
         focusedElement.click();
@@ -172,15 +175,15 @@ function handleChatPageKeydown(event) {
       }
     }
 
-    if (event.code === "ArrowUp") {
+    if (isShortcut(event, 'chat.historyUp')) {
       event.preventDefault();
       moveHistoryUp();
       return true;
-    } else if (event.code === "ArrowDown") {
+    } else if (isShortcut(event, 'chat.historyDown')) {
       event.preventDefault();
       moveHistoryDown();
       return true;
-    } else if (event.code === "Enter") {
+    } else if (isShortcut(event, 'chat.historyOpen')) {
       event.preventDefault();
       openSelectedHistory();
       return true;
@@ -192,14 +195,17 @@ function handleChatPageKeydown(event) {
 
 // Initialize keyboard event listeners
 function initializeKeyboardHandlers() {
-  document.addEventListener("keydown", function(event) {
-    // Dedicated processing for search page
-    if (isSearchPage()) {
-      handleSearchPageKeydown(event);
-      return;
-    }
+  // Load shortcuts first
+  loadShortcuts().then(() => {
+    document.addEventListener("keydown", function(event) {
+      // Dedicated processing for search page
+      if (isSearchPage()) {
+        handleSearchPageKeydown(event);
+        return;
+      }
 
-    // Chat page processing
-    handleChatPageKeydown(event);
-  }, true); // Capture event in capture phase
+      // Chat page processing
+      handleChatPageKeydown(event);
+    }, true); // Capture event in capture phase
+  });
 }

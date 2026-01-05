@@ -1,13 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Gemini Chat UI Improvements",
-  "version": "2.9",
+  "version": "3.0",
   "description": "Gemini Chat UI improvements with keyboard shortcuts",
   "author": "toyama0919",
-  "permissions": [],
+  "permissions": ["storage"],
   "host_permissions": [
     "https://gemini.google.com/*"
   ],
+  "options_page": "options.html",
   "content_scripts": [
     {
       "matches": [
@@ -15,6 +16,7 @@
         "https://gemini.google.com/search*"
       ],
       "js": [
+        "src/settings.js",
         "src/search.js",
         "src/history.js",
         "src/chat.js",
