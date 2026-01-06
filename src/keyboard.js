@@ -74,6 +74,18 @@ function handleChatPageKeydown(event) {
     return true;
   }
 
+  // Cmd+Shift+C: Copy all chat history (disable only in history selection mode)
+  if (isShortcut(event, 'chat.copyAllHistory')) {
+    // Disable only in history selection mode
+    if (isHistorySelectionMode()) {
+      return false;
+    }
+
+    event.preventDefault();
+    copyAllChatHistory();
+    return true;
+  }
+
   // Insert: Navigate to search page
   if (isShortcut(event, 'chat.navigateToSearch')) {
     event.preventDefault();

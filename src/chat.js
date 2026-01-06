@@ -330,6 +330,48 @@ function clickPinButton() {
   }
 }
 
+// Copy all chat history to clipboard
+function copyAllChatHistory() {
+  const chatHistory = document.querySelector('infinite-scroller.chat-history');
+
+  if (!chatHistory) {
+    return false;
+  }
+
+  const conversations = chatHistory.querySelectorAll('.conversation-container');
+
+  if (conversations.length === 0) {
+    return false;
+  }
+
+  let historyHtml = '';
+
+  conversations.forEach((conversation) => {
+    // Extract user query
+    const userQuery = conversation.querySelector('.query-text');
+    if (userQuery) {
+      historyHtml += `<strong>User:</strong>\n${userQuery.innerHTML}\n\n`;
+    }
+
+    // Extract model response
+    const modelResponse = conversation.querySelector('.markdown.markdown-main-panel');
+    if (modelResponse) {
+      historyHtml += `<strong>Gemini:</strong>\n${modelResponse.innerHTML}\n\n`;
+    }
+
+    historyHtml += '<hr>\n\n';
+  });
+
+  // Copy to clipboard
+  navigator.clipboard.writeText(historyHtml).then(() => {
+    console.log('Chat history copied to clipboard');
+  }).catch(err => {
+    console.error('Failed to copy chat history:', err);
+  });
+
+  return true;
+}
+
 // Initialize chat page
 function initializeChatPage() {
   // Check query parameter on page load
