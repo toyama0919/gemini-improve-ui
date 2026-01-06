@@ -62,6 +62,18 @@ function handleSearchPageKeydown(event) {
 function handleChatPageKeydown(event) {
   const isInInput = event.target.matches('input, textarea, [contenteditable="true"]');
 
+  // Cmd+Shift+P: Toggle pin/unpin (disable only in history selection mode)
+  if (isShortcut(event, 'chat.togglePin')) {
+    // Disable only in history selection mode
+    if (isHistorySelectionMode()) {
+      return false;
+    }
+
+    event.preventDefault();
+    toggleChatPin();
+    return true;
+  }
+
   // Insert: Navigate to search page
   if (isShortcut(event, 'chat.navigateToSearch')) {
     event.preventDefault();

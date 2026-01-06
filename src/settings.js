@@ -12,7 +12,8 @@ const DEFAULT_SHORTCUTS = {
     historyUp: 'ArrowUp',
     historyDown: 'ArrowDown',
     historyOpen: 'Enter',
-    historyExit: 'Escape'
+    historyExit: 'Escape',
+    togglePin: { key: 'KeyP', meta: true, shift: true }
   },
   search: {
     moveUp: 'ArrowUp',
@@ -72,7 +73,19 @@ function isShortcut(event, shortcutKey) {
     if (!shortcut) return false;
   }
 
-  // Check if event matches shortcut
+  // Support for shortcut objects with modifier keys
+  if (typeof shortcut === 'object') {
+    const metaMatch = shortcut.meta ? event.metaKey : !event.metaKey;
+    const ctrlMatch = shortcut.ctrl ? event.ctrlKey : !event.ctrlKey;
+    const shiftMatch = shortcut.shift ? event.shiftKey : !event.shiftKey;
+
+    return event.code === shortcut.key &&
+           metaMatch &&
+           ctrlMatch &&
+           shiftMatch;
+  }
+
+  // Check if event matches shortcut (simple key)
   return event.code === shortcut &&
          !event.ctrlKey &&
          !event.metaKey &&
