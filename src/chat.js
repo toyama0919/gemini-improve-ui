@@ -91,24 +91,44 @@ function scrollChatArea(direction) {
 
 // Create new chat
 function createNewChat() {
+  // Try finding the new chat button by test ID
+  const newChatButton = document.querySelector('side-nav-action-button[data-test-id="new-chat-button"]');
+
+  if (newChatButton) {
+    // Find the actual clickable element (a tag or button)
+    const clickableElement = newChatButton.querySelector('a[mat-list-item]') ||
+                            newChatButton.querySelector('button');
+    if (clickableElement) {
+      clickableElement.click();
+      return;
+    }
+  }
+
+  // Fallback: search by content text
   const buttonContent = document.querySelector('[data-test-id="side-nav-action-button-content"]');
 
   if (buttonContent) {
-    const button = buttonContent.closest('button') || buttonContent.closest('side-nav-action-button');
-    if (button) {
-      button.click();
+    const clickable = buttonContent.closest('a') ||
+                     buttonContent.closest('button') ||
+                     buttonContent.closest('side-nav-action-button');
+    if (clickable) {
+      clickable.click();
       return;
     }
   }
 
   // Alternative method: search by text
   const buttons = Array.from(document.querySelectorAll('side-nav-action-button'));
-  const newChatButton = buttons.find(btn =>
+  const newChatBtn = buttons.find(btn =>
     btn.textContent.includes('新規') || btn.textContent.includes('New chat')
   );
 
-  if (newChatButton) {
-    newChatButton.click();
+  if (newChatBtn) {
+    const clickable = newChatBtn.querySelector('a[mat-list-item]') ||
+                     newChatBtn.querySelector('button');
+    if (clickable) {
+      clickable.click();
+    }
   }
 }
 
