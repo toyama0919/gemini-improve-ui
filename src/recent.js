@@ -127,6 +127,7 @@ function createRecentChatsSection() {
     const chatItem = document.createElement('div');
     chatItem.className = 'conversation recent-chat-item';
     chatItem.setAttribute('data-test-id', 'conversation');
+    chatItem.setAttribute('tabindex', '0');
     chatItem.style.cssText = `
       padding: 4px 16px;
       cursor: pointer;
@@ -143,8 +144,20 @@ function createRecentChatsSection() {
       chatItem.style.backgroundColor = '';
     });
 
-    chatItem.addEventListener('click', () => {
+    // Common navigation handler
+    const navigateToChat = () => {
+      // Update localStorage before navigation
+      saveRecentChat(chat.id, chat.title);
       window.location.href = `/app/${chat.id}`;
+    };
+
+    chatItem.addEventListener('click', navigateToChat);
+
+    chatItem.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        navigateToChat();
+      }
     });
 
     const titleSpan = document.createElement('span');
