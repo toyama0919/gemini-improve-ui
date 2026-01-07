@@ -178,6 +178,18 @@ function updateRecentChatsSection() {
 
 // Initialize recent chats functionality
 function initializeRecentChats() {
+  // Track if q= parameter was present (for delayed title update)
+  let hadQueryParam = false;
+
+  // Check if page was accessed with q= parameter
+  const checkQueryParam = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('q')) {
+      hadQueryParam = true;
+    }
+  };
+  checkQueryParam();
+
   // Save current chat when navigating to a chat page
   if (getCurrentChatId()) {
     // Wait for title to load
@@ -192,11 +204,25 @@ function initializeRecentChats() {
     const currentUrl = window.location.href;
     if (currentUrl !== lastUrl) {
       lastUrl = currentUrl;
+
+      // Check for q= parameter on URL change
+      checkQueryParam();
+
       if (getCurrentChatId()) {
         setTimeout(() => {
           saveCurrentChatAsRecent();
           updateRecentChatsSection();
         }, 1000);
+
+        // If q= parameter was present, update title again after 20 seconds
+        // because it takes time for Gemini to generate the conversation title
+        if (hadQueryParam) {
+          setTimeout(() => {
+            saveCurrentChatAsRecent();
+            updateRecentChatsSection();
+          }, 20000);
+          hadQueryParam = false; // Reset flag
+        }
       }
     }
   });
