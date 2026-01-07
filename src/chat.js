@@ -283,8 +283,11 @@ function moveBetweenCopyButtons(direction) {
 
 // Toggle pin/unpin current chat
 function toggleChatPin() {
-  // First, open the menu if it's not already open
-  const menuButton = document.querySelector('button[data-test-id="actions-menu-button"]');
+  // Try both menu button patterns (Workspace and non-Workspace)
+  // Use more specific selectors to avoid selecting sidebar menu buttons
+  const menuButton =
+    document.querySelector('conversation-actions button[data-test-id="actions-menu-button"]') ||
+    document.querySelector('button[data-test-id="conversation-actions-menu-icon-button"]');
 
   if (!menuButton) {
     return false;
