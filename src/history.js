@@ -58,6 +58,13 @@ function openSelectedHistory() {
     item.style.outlineOffset = '';
   });
 
+  // Save as recent chat after navigation
+  setTimeout(() => {
+    if (typeof saveCurrentChatAsRecent === 'function') {
+      saveCurrentChatAsRecent();
+    }
+  }, 1000);
+
   // Clear and focus textarea after page navigation
   clearAndFocusTextarea();
 }

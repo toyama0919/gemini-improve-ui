@@ -245,6 +245,13 @@ function setQueryFromUrl() {
 
         if (sendButton && !sendButton.disabled) {
           sendButton.click();
+
+          // Save as recent chat after URL changes
+          setTimeout(() => {
+            if (typeof saveCurrentChatAsRecent === 'function') {
+              saveCurrentChatAsRecent();
+            }
+          }, 2000);
         }
       }, 500);
     } else if (attempts >= maxAttempts) {
