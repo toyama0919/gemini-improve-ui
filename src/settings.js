@@ -13,8 +13,7 @@ const DEFAULT_SHORTCUTS = {
     historyDown: 'ArrowDown',
     historyOpen: 'Enter',
     historyExit: 'Escape',
-    togglePin: { key: 'KeyP', meta: true, shift: true },
-    copyAllHistory: { key: 'KeyC', meta: true, shift: true }
+    togglePin: { key: 'KeyP', meta: true, shift: true }
   },
   search: {
     moveUp: 'ArrowUp',

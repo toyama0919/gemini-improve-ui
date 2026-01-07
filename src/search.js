@@ -166,3 +166,17 @@ function navigateToSearchPage() {
   // Dispatch popstate event to notify SPA router
   window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
 }
+
+// Toggle between search page and previous page
+function toggleSearchPage() {
+  if (isSearchPage()) {
+    // If on search page, go back to previous page
+    history.back();
+  } else {
+    // If on chat page, exit history selection mode before navigating
+    if (typeof exitHistorySelectionMode === 'function') {
+      exitHistorySelectionMode();
+    }
+    navigateToSearchPage();
+  }
+}

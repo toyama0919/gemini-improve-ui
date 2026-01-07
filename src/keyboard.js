@@ -2,6 +2,13 @@
 
 // Handle search page keyboard events
 function handleSearchPageKeydown(event) {
+  // Insert: Toggle between search page and chat page
+  if (isShortcut(event, 'chat.navigateToSearch')) {
+    event.preventDefault();
+    toggleSearchPage();
+    return true;
+  }
+
   // Select search results with up/down keys (works even when focus is on input field)
   if (isShortcut(event, 'search.moveUp')) {
     event.preventDefault();
@@ -74,22 +81,10 @@ function handleChatPageKeydown(event) {
     return true;
   }
 
-  // Cmd+Shift+C: Copy all chat history (disable only in history selection mode)
-  if (isShortcut(event, 'chat.copyAllHistory')) {
-    // Disable only in history selection mode
-    if (isHistorySelectionMode()) {
-      return false;
-    }
-
-    event.preventDefault();
-    copyAllChatHistory();
-    return true;
-  }
-
-  // Insert: Navigate to search page
+  // Insert: Toggle between search page and chat page
   if (isShortcut(event, 'chat.navigateToSearch')) {
     event.preventDefault();
-    navigateToSearchPage();
+    toggleSearchPage();
     return true;
   }
 
