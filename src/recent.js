@@ -48,8 +48,29 @@ function getCurrentChatId() {
 
 // Get current chat title
 function getCurrentChatTitle() {
-  const titleElement = document.querySelector('conversation-actions .conversation-title');
-  return titleElement ? titleElement.textContent.trim() : '';
+  // Try multiple selectors for different Gemini versions
+  const titleElement =
+    document.querySelector('conversation-actions .conversation-title') ||
+    document.querySelector('.conversation-title') ||
+    document.querySelector('[data-test-id="conversation-title"]');
+
+  if (titleElement) {
+    const title = titleElement.textContent.trim();
+    // Don't return empty or default titles
+    if (title && title !== 'New chat' && title !== '新規チャット') {
+      return title;
+    }
+  }
+
+  // Try to get title from first user query
+  const firstQuery = document.querySelector('.query-text');
+  if (firstQuery) {
+    const queryText = firstQuery.textContent.trim();
+    // Use first 50 characters as title
+    return queryText.length > 50 ? queryText.substring(0, 50) + '...' : queryText;
+  }
+
+  return '';
 }
 
 // Save current chat as recent
