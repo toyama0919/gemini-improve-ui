@@ -197,7 +197,17 @@ function initializeAutocomplete() {
 
     // Wait for user to stop typing
     autocompleteTimeout = setTimeout(async () => {
-      const suggestions = await fetchGoogleSuggestions(trimmedText);
+      // Re-check text content before fetching (user might have deleted everything)
+      const currentText = textarea.textContent || '';
+      const currentTrimmed = currentText.trim();
+
+      // If text is now empty, don't fetch
+      if (currentTrimmed.length === 0) {
+        hideAutocompleteSuggestions();
+        return;
+      }
+
+      const suggestions = await fetchGoogleSuggestions(currentTrimmed);
       showAutocompleteSuggestions(textarea, suggestions);
     }, 300);
   });
