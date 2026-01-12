@@ -366,4 +366,9 @@ function initializeChatPage() {
   setTimeout(() => {
     setQueryFromUrl();
   }, 1000);
+
+  // Initialize autocomplete
+  setTimeout(() => {
+    initializeAutocomplete();
+  }, 1500);
 }

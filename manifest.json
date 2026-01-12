@@ -20,6 +20,7 @@
         "src/recent.js",
         "src/search.js",
         "src/history.js",
+        "src/autocomplete.js",
         "src/chat.js",
         "src/keyboard.js",
         "src/content.js"
