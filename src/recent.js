@@ -21,13 +21,19 @@ function saveRecentChat(chatId, title = '') {
   try {
     let recentChats = getRecentChats();
 
+    // Find existing chat with same ID
+    const existingChat = recentChats.find(chat => chat.id === chatId);
+
     // Remove duplicate if exists
     recentChats = recentChats.filter(chat => chat.id !== chatId);
+
+    // If title is empty and we have an existing title, preserve it
+    const finalTitle = title || (existingChat ? existingChat.title : '');
 
     // Add to beginning
     recentChats.unshift({
       id: chatId,
-      title: title,
+      title: finalTitle,
       timestamp: Date.now()
     });
 
