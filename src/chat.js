@@ -11,8 +11,10 @@ function toggleSidebar() {
     return;
   }
 
-  // Click menu button to toggle
-  const menuButton = document.querySelector('button[data-test-id="side-nav-menu-button"]');
+  // Click menu button to toggle (use aria-label for stability)
+  const menuButton = document.querySelector('button[aria-label*="メインメニュー"]') ||
+                     document.querySelector('button[aria-label*="Main menu"]') ||
+                     document.querySelector('button[data-test-id="side-nav-menu-button"]');
 
   if (menuButton) {
     menuButton.click();
@@ -91,44 +93,34 @@ function scrollChatArea(direction) {
 
 // Create new chat
 function createNewChat() {
-  // Try finding the new chat button by test ID
-  const newChatButton = document.querySelector('side-nav-action-button[data-test-id="new-chat-button"]');
+  // Try stable selectors first (aria-label or href)
+  const newChatLink = document.querySelector('a[href="https://gemini.google.com/app"]') ||
+                     document.querySelector('a[aria-label*="新規作成"]') ||
+                     document.querySelector('a[aria-label*="New chat"]');
 
+  if (newChatLink) {
+    newChatLink.click();
+    return;
+  }
+
+  // Fallback: by data-test-id
+  const newChatButton = document.querySelector('[data-test-id="new-chat-button"]');
   if (newChatButton) {
-    // Find the actual clickable element (a tag or button)
-    const clickableElement = newChatButton.querySelector('a[mat-list-item]') ||
-                            newChatButton.querySelector('button');
-    if (clickableElement) {
-      clickableElement.click();
-      return;
-    }
+    const clickable = newChatButton.querySelector('a, button') || newChatButton;
+    clickable.click();
+    return;
   }
 
-  // Fallback: search by content text
-  const buttonContent = document.querySelector('[data-test-id="side-nav-action-button-content"]');
-
-  if (buttonContent) {
-    const clickable = buttonContent.closest('a') ||
-                     buttonContent.closest('button') ||
-                     buttonContent.closest('side-nav-action-button');
-    if (clickable) {
-      clickable.click();
-      return;
-    }
-  }
-
-  // Alternative method: search by text
-  const buttons = Array.from(document.querySelectorAll('side-nav-action-button'));
-  const newChatBtn = buttons.find(btn =>
-    btn.textContent.includes('新規') || btn.textContent.includes('New chat')
+  // Last resort: search by text content
+  const links = Array.from(document.querySelectorAll('a, button'));
+  const newChatBtn = links.find(el =>
+    el.textContent.includes('新規作成') ||
+    el.textContent.includes('New chat') ||
+    el.textContent.includes('新規')
   );
 
   if (newChatBtn) {
-    const clickable = newChatBtn.querySelector('a[mat-list-item]') ||
-                     newChatBtn.querySelector('button');
-    if (clickable) {
-      clickable.click();
-    }
+    newChatBtn.click();
   }
 }
 

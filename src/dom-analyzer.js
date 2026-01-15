@@ -5,24 +5,41 @@ class DOMAnalyzer {
     // 複数のセレクター候補を安定性順に保持
     this.elementSelectors = {
       textarea: [
-        '[aria-label*="プロンプト"]',
         '[role="textbox"][contenteditable="true"]',
+        '[aria-label*="プロンプト"]',
         '.ql-editor.textarea',
         'rich-textarea [contenteditable="true"]'
       ],
       sidebar: [
-        'nav[role="navigation"]',
+        '[role="navigation"]',
+        'bard-sidenav',
         '.side-nav-container',
         'aside'
       ],
+      sidebarToggle: [
+        'button[aria-label*="メインメニュー"]',
+        'button[aria-label*="Main menu"]',
+        'button[data-test-id="side-nav-menu-button"]'
+      ],
       chatHistory: [
-        'nav button[description]',
-        '.chat-history-item',
-        '[role="button"][description*=""]'
+        '.conversation[role="button"]',
+        '[data-test-id="conversation"]',
+        '.conversation-items-container .conversation'
       ],
       newChatButton: [
-        '[description*="新規作成"]',
-        'a[href*="/app"][description]'
+        'a[href="https://gemini.google.com/app"]',
+        'a[aria-label*="新規作成"]',
+        '[data-test-id="new-chat-button"]'
+      ],
+      copyButtons: [
+        'button[aria-label*="コピー"]',
+        'button[aria-label*="Copy"]',
+        '.copy-button'
+      ],
+      chatContainer: [
+        'chat-window',
+        'main.main',
+        '.conversation-container'
       ]
     };
   }

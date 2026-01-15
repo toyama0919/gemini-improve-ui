@@ -151,6 +151,19 @@ The code is organized into modular files for better maintainability:
 - **keyboard.js**: Central keyboard event handling
 - **content.js**: Main initialization and entry point
 
+### Selector Strategy
+
+This extension uses a resilient selector strategy to handle Gemini's UI changes:
+
+1. **Priority Order**:
+   - ARIA attributes (`aria-label`, `role`) - Most stable
+   - Semantic attributes (`data-test-id`) - Moderately stable
+   - Class names - Least stable, used as fallback
+
+2. **Multiple Candidates**: Each element type has multiple selector candidates, automatically falling back if the primary selector fails
+
+3. **DOM Analyzer**: Press `Ctrl+Shift+D` to export current page structure for AI analysis when selectors need updating
+
 ### Debugging
 
 1. Click the "Reload" button for the extension at `chrome://extensions/`
