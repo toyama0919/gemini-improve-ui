@@ -1,9 +1,18 @@
 // Gemini Chat UI improvements with keyboard shortcuts
 // Main entry point
 
-// Apply custom styles to hide unnecessary elements
+// Apply custom styles to hide unnecessary elements and adjust chat width
 function applyCustomStyles() {
+  const styleId = 'gemini-improve-ui-custom-styles';
+  
+  // Remove existing style if present
+  const existingStyle = document.getElementById(styleId);
+  if (existingStyle) {
+    existingStyle.remove();
+  }
+
   const style = document.createElement('style');
+  style.id = styleId;
   style.textContent = `
     /* Hide Gem list in sidebar */
     .gems-list-container {
@@ -14,12 +23,45 @@ function applyCustomStyles() {
     .side-nav-entry-container {
       display: none !important;
     }
+
+    /* Adjust chat main area width */
+    .chat-container {
+      max-width: var(--chat-max-width, 900px) !important;
+    }
+
+    chat-window {
+      max-width: var(--chat-max-width, 900px) !important;
+    }
+
+    main.main {
+      max-width: var(--chat-max-width, 900px) !important;
+    }
+
+    .conversation-container {
+      max-width: var(--chat-max-width, 900px) !important;
+    }
   `;
   document.head.appendChild(style);
 }
 
+// Update chat width from settings
+function updateChatWidth(width) {
+  document.documentElement.style.setProperty('--chat-max-width', `${width}px`);
+}
+
+// Load and apply chat width setting
+function loadChatWidth() {
+  chrome.storage.sync.get(['chatWidth'], (result) => {
+    const width = result.chatWidth || 900; // Default: 900px
+    updateChatWidth(width);
+  });
+}
+
 // Initialize the extension
 function initialize() {
+  // Load and apply chat width setting
+  loadChatWidth();
+  
   // Apply custom styles
   applyCustomStyles();
 
@@ -44,6 +86,14 @@ function initialize() {
   } else {
     initializeChatPage();
   }
+  
+  // Listen for storage changes to update width dynamically
+  chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'sync' && changes.chatWidth) {
+      updateChatWidth(changes.chatWidth.newValue);
+      applyCustomStyles();
+    }
+  });
 }
 
 // Start when DOM is ready

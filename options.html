@@ -96,6 +96,34 @@
       cursor: pointer;
     }
 
+    input[type="range"] {
+      flex: 1;
+      height: 6px;
+      background: #ddd;
+      border-radius: 3px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      background: #1a73e8;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      background: #1a73e8;
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+    }
+
     .key-display {
       display: inline-block;
       padding: 4px 8px;
@@ -178,6 +206,20 @@
   <div class="container">
     <h1>⌨️ Keyboard Shortcuts Settings</h1>
     <p class="subtitle">Customize keyboard shortcuts for Gemini Chat UI</p>
+
+    <div class="section">
+      <h2 class="section-title">Chat Display Settings</h2>
+      <div class="shortcut-item">
+        <div class="shortcut-label">Chat area width</div>
+        <div class="shortcut-input">
+          <input type="range" id="chatWidth" min="600" max="1600" step="50" value="900">
+          <span id="chatWidthValue" class="key-display">900px</span>
+        </div>
+      </div>
+      <div class="note">
+        💡 Adjust the maximum width of the chat area. Default is 900px. Range: 600px - 1600px.
+      </div>
+    </div>
 
     <div class="section">
       <h2 class="section-title">Chat Screen</h2>

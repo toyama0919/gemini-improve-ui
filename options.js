@@ -26,18 +26,37 @@ const DEFAULT_SHORTCUTS = {
 // Current shortcuts
 let currentShortcuts = JSON.parse(JSON.stringify(DEFAULT_SHORTCUTS));
 
-// Load shortcuts from storage
-function loadShortcuts() {
-  chrome.storage.sync.get(['shortcuts'], (result) => {
+// Current chat width
+let currentChatWidth = 900;
+
+// Load settings from storage
+function loadSettings() {
+  chrome.storage.sync.get(['shortcuts', 'chatWidth'], (result) => {
     if (result.shortcuts) {
       currentShortcuts = result.shortcuts;
     }
-    displayShortcuts();
+    if (result.chatWidth) {
+      currentChatWidth = result.chatWidth;
+    }
+    displaySettings();
   });
 }
 
-// Display shortcuts in UI
-function displayShortcuts() {
+// Load shortcuts from storage (backward compatibility)
+function loadShortcuts() {
+  loadSettings();
+}
+
+// Display settings in UI
+function displaySettings() {
+  // Chat width
+  const chatWidthSlider = document.getElementById('chatWidth');
+  const chatWidthValue = document.getElementById('chatWidthValue');
+  if (chatWidthSlider && chatWidthValue) {
+    chatWidthSlider.value = currentChatWidth;
+    chatWidthValue.textContent = `${currentChatWidth}px`;
+  }
+
   // Chat shortcuts
   for (const key in currentShortcuts.chat) {
     const input = document.getElementById(`chat.${key}`);
@@ -55,20 +74,42 @@ function displayShortcuts() {
   }
 }
 
-// Save shortcuts to storage
-function saveShortcuts() {
-  chrome.storage.sync.set({ shortcuts: currentShortcuts }, () => {
+// Display shortcuts in UI (backward compatibility)
+function displayShortcuts() {
+  displaySettings();
+}
+
+// Save settings to storage
+function saveSettings() {
+  chrome.storage.sync.set({ 
+    shortcuts: currentShortcuts,
+    chatWidth: currentChatWidth
+  }, () => {
     showMessage('Settings saved successfully!');
   });
 }
 
-// Reset to default shortcuts
-function resetShortcuts() {
+// Save shortcuts to storage (backward compatibility)
+function saveShortcuts() {
+  saveSettings();
+}
+
+// Reset to default settings
+function resetSettings() {
   currentShortcuts = JSON.parse(JSON.stringify(DEFAULT_SHORTCUTS));
-  displayShortcuts();
-  chrome.storage.sync.set({ shortcuts: currentShortcuts }, () => {
+  currentChatWidth = 900;
+  displaySettings();
+  chrome.storage.sync.set({ 
+    shortcuts: currentShortcuts,
+    chatWidth: currentChatWidth
+  }, () => {
     showMessage('Settings reset to default!');
   });
+}
+
+// Reset to default shortcuts (backward compatibility)
+function resetShortcuts() {
+  resetSettings();
 }
 
 // Show message
@@ -102,7 +143,18 @@ function handleKeyInput(event, inputId) {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-  loadShortcuts();
+  loadSettings();
+
+  // Chat width slider
+  const chatWidthSlider = document.getElementById('chatWidth');
+  const chatWidthValue = document.getElementById('chatWidthValue');
+  
+  if (chatWidthSlider && chatWidthValue) {
+    chatWidthSlider.addEventListener('input', (event) => {
+      currentChatWidth = parseInt(event.target.value);
+      chatWidthValue.textContent = `${currentChatWidth}px`;
+    });
+  }
 
   // Add key listeners to all input fields
   const inputs = document.querySelectorAll('input[type="text"]');
@@ -119,13 +171,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Save button
   document.getElementById('saveBtn').addEventListener('click', () => {
-    saveShortcuts();
+    saveSettings();
   });
 
   // Reset button
   document.getElementById('resetBtn').addEventListener('click', () => {
-    if (confirm('Reset all shortcuts to default values?')) {
-      resetShortcuts();
+    if (confirm('Reset all settings to default values?')) {
+      resetSettings();
     }
   });
 });
