@@ -1,4 +1,5 @@
 # Chrome profiles for development/testing
+.chrome-devtools-mcp/
 agent-chrome-profile/
 *-chrome-profile/
 
@@ -20,6 +21,10 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Cursor (except mcp.json which is shared)
+.cursor/*
+!.cursor/mcp.json
 
 # Temporary files
 *.log

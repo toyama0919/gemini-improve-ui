@@ -84,27 +84,22 @@ This extension includes functionality to help AI agents understand the current p
 
 ### Using with Chrome DevTools MCP
 
-For more advanced usage, you can connect to this extension using Chrome DevTools MCP:
+For more advanced usage, you can connect to this extension using Chrome DevTools MCP.
 
-```bash
-# Start Chrome with remote debugging
-/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
-  --remote-debugging-port=9222 \
-  --user-data-dir="/path/to/profile"
-```
+**Quick Start (Cursor users):**
 
-Then configure your MCP client:
+This repository includes `.cursor/mcp.json` with Chrome DevTools MCP pre-configured. Simply:
 
-```json
-{
-  "mcpServers": {
-    "chrome-devtools": {
-      "command": "npx",
-      "args": ["-y", "chrome-devtools-mcp@latest", "--browserUrl=http://127.0.0.1:9222"]
-    }
-  }
-}
-```
+1. Start Chrome with remote debugging (from repository root):
+   ```bash
+   /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
+     --remote-debugging-port=9222 \
+     --user-data-dir="$(pwd)/.chrome-devtools-mcp"
+   ```
+
+2. Open this project in Cursor - MCP is automatically configured
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed instructions and troubleshooting.
 
 This allows AI agents to:
 - Inspect the live DOM using accessibility tree

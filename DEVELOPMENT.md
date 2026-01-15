@@ -12,20 +12,20 @@ HTML構造が変更されても、AIエージェントに現在の状態を伝�
 通常のChromeを全て終了してから、以下のコマンドで起動：
 
 ```bash
-# macOSの場合
+# macOSの場合（リポジトリのルートから実行）
 /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
   --remote-debugging-port=9222 \
-  --user-data-dir="$HOME/agent-chrome-profile"
+  --user-data-dir="$(pwd)/.chrome-devtools-mcp"
 
-# Linuxの場合
+# Linuxの場合（リポジトリのルートから実行）
 google-chrome \
   --remote-debugging-port=9222 \
-  --user-data-dir="$HOME/agent-chrome-profile"
+  --user-data-dir="$(pwd)/.chrome-devtools-mcp"
 
-# Windowsの場合
+# Windowsの場合（リポジトリのルートから実行）
 "C:\Program Files\Google\Chrome\Application\chrome.exe" ^
   --remote-debugging-port=9222 ^
-  --user-data-dir="%USERPROFILE%\agent-chrome-profile"
+  --user-data-dir="%CD%\.chrome-devtools-mcp"
 ```
 
 **重要な注意点:**
@@ -33,10 +33,13 @@ google-chrome \
 - ポート9222は他のアプリケーションと競合しないこと
 - このプロファイルは開発・テスト専用として使用すること
 
-#### 2. MCP設定ファイルの作成
+#### 2. MCP設定の確認
 
-Cursor/ClaudeのMCP設定ファイル（通常は`~/.cursor/mcp.json`または`~/github/dotfiles/.cursor/mcp.json`）に以下を追加：
+このリポジトリには`.cursor/mcp.json`が含まれており、Chrome DevTools MCPの設定が既に記述されている。
 
+Cursorでこのプロジェクトを開くと、自動的にこの設定が読み込まれる。
+
+**設定内容（`.cursor/mcp.json`）:**
 ```json
 {
   "mcpServers": {
@@ -51,6 +54,10 @@ Cursor/ClaudeのMCP設定ファイル（通常は`~/.cursor/mcp.json`または`~
   }
 }
 ```
+
+**注意:** 
+- このファイルはリポジトリに含まれているので、クローン後すぐに使える
+- グローバル設定（`~/.cursor/mcp.json`）がある場合、プロジェクト設定が優先される
 
 **設定のポイント:**
 - `--browserUrl`は既存のChromeインスタンスに接続するためのオプション
@@ -142,9 +149,9 @@ ps aux | grep "remote-debugging-port=9222"
 
 **原因:** 一時プロファイル（`/tmp`など）を使用している
 
-**解決方法:** ホームディレクトリ配下の永続的なディレクトリを使用：
+**解決方法:** リポジトリ内の永続的なディレクトリを使用（リポジトリのルートから）：
 ```bash
---user-data-dir="$HOME/agent-chrome-profile"
+--user-data-dir="$(pwd)/.chrome-devtools-mcp"
 ```
 
 ### セキュリティ上の注意
