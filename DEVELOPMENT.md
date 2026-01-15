@@ -15,7 +15,7 @@ HTML構造が変更されても、AIエージェントに現在の状態を伝�
 # macOSの場合
 /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
   --remote-debugging-port=9222 \
-  --user-data-dir="/Users/hiroshi.toyama/agent-chrome-profile"
+  --user-data-dir="$HOME/agent-chrome-profile"
 
 # Linuxの場合
 google-chrome \
