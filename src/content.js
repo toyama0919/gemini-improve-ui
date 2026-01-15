@@ -4,7 +4,7 @@
 // Apply custom styles to hide unnecessary elements and adjust chat width
 function applyCustomStyles() {
   const styleId = 'gemini-improve-ui-custom-styles';
-  
+
   // Remove existing style if present
   const existingStyle = document.getElementById(styleId);
   if (existingStyle) {
@@ -24,20 +24,8 @@ function applyCustomStyles() {
       display: none !important;
     }
 
-    /* Adjust chat main area width */
-    .chat-container {
-      max-width: var(--chat-max-width, 900px) !important;
-      margin-left: auto !important;
-      margin-right: auto !important;
-    }
-
+    /* Adjust chat content area width (not main layout) */
     chat-window {
-      max-width: var(--chat-max-width, 900px) !important;
-      margin-left: auto !important;
-      margin-right: auto !important;
-    }
-
-    main.main {
       max-width: var(--chat-max-width, 900px) !important;
       margin-left: auto !important;
       margin-right: auto !important;
@@ -69,7 +57,7 @@ function loadChatWidth() {
 function initialize() {
   // Load and apply chat width setting
   loadChatWidth();
-  
+
   // Apply custom styles
   applyCustomStyles();
 
@@ -94,7 +82,7 @@ function initialize() {
   } else {
     initializeChatPage();
   }
-  
+
   // Listen for storage changes to update width dynamically
   chrome.storage.onChanged.addListener((changes, namespace) => {
     if (namespace === 'sync' && changes.chatWidth) {

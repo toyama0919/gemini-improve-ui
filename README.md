@@ -92,14 +92,25 @@ This repository includes `.cursor/mcp.json` with Chrome DevTools MCP pre-configu
 
 1. Start Chrome with remote debugging (from repository root):
    ```bash
+   # Using helper script (recommended - won't kill your existing Chrome)
+   ./dev.sh start           # Background mode
+   ./dev.sh start --fg      # Foreground mode (press Ctrl+C to stop)
+
+   # Or manually (macOS)
    /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
      --remote-debugging-port=9222 \
-     --user-data-dir="$(pwd)/.chrome-devtools-mcp"
+     --user-data-dir="$(pwd)/.chrome-devtools-mcp" &
    ```
 
 2. Open this project in Cursor - MCP is automatically configured
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed instructions and troubleshooting.
+3. When done debugging:
+   ```bash
+   ./dev.sh stop         # Stop debug Chrome (background mode)
+   # or press Ctrl+C     # (foreground mode)
+   ```
+
+For detailed debugging instructions, see `.cursorrules` file in the repository.
 
 This allows AI agents to:
 - Inspect the live DOM using accessibility tree
@@ -109,7 +120,7 @@ This allows AI agents to:
 
 ## Development
 
-For detailed development instructions, including Chrome DevTools MCP setup, see [DEVELOPMENT.md](DEVELOPMENT.md).
+For detailed development instructions, including Chrome DevTools MCP setup, see `.cursorrules` file.
 
 ### File Structure
 

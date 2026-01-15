@@ -1,0 +1,185 @@
+#!/bin/bash
+
+# Development helper script for Gemini Improve UI extension
+
+CHROME_DEBUG_PORT=9222
+CHROME_USER_DIR="$(pwd)/.chrome-devtools-mcp"
+CHROME_BINARY="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+PID_FILE="${CHROME_USER_DIR}/.chrome-debug.pid"
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+# Cleanup function for foreground mode
+cleanup() {
+  echo -e "\n${YELLOW}Cleaning up debug Chrome...${NC}"
+  if [ ! -z "${CHROME_PID}" ]; then
+    kill ${CHROME_PID} 2>/dev/null
+    rm -f "${PID_FILE}"
+    echo -e "${GREEN}Debug Chrome stopped${NC}"
+  fi
+  exit 0
+}
+
+check_debug_chrome() {
+  curl -s http://localhost:${CHROME_DEBUG_PORT}/json/version > /dev/null 2>&1
+  return $?
+}
+
+start_chrome() {
+  local FOREGROUND=false
+  if [ "$1" == "--fg" ] || [ "$1" == "--foreground" ]; then
+    FOREGROUND=true
+  fi
+
+  echo -e "${YELLOW}Checking if debug Chrome is already running...${NC}"
+
+  if check_debug_chrome; then
+    echo -e "${GREEN}Debug Chrome is already running on port ${CHROME_DEBUG_PORT}${NC}"
+    exit 0
+  fi
+
+  echo -e "${YELLOW}Starting Chrome in remote debugging mode...${NC}"
+
+  # Create user data directory if it doesn't exist
+  mkdir -p "${CHROME_USER_DIR}"
+
+  if [ "$FOREGROUND" = true ]; then
+    # Foreground mode - trap Ctrl+C for cleanup
+    trap cleanup INT TERM
+
+    echo -e "${GREEN}Starting in foreground mode (press Ctrl+C to stop)${NC}"
+
+    # Start Chrome in foreground
+    "${CHROME_BINARY}" \
+      --remote-debugging-port=${CHROME_DEBUG_PORT} \
+      --user-data-dir="${CHROME_USER_DIR}" &
+
+    CHROME_PID=$!
+    echo ${CHROME_PID} > "${PID_FILE}"
+
+    # Wait for Chrome to start
+    sleep 2
+
+    if check_debug_chrome; then
+      echo -e "${GREEN}Chrome started successfully (PID: ${CHROME_PID})${NC}"
+      echo -e "${GREEN}Remote debugging available at http://localhost:${CHROME_DEBUG_PORT}${NC}"
+      echo -e "${YELLOW}Press Ctrl+C to stop debug Chrome${NC}"
+
+      # Wait for Chrome process to exit or Ctrl+C
+      wait ${CHROME_PID}
+      cleanup
+    else
+      echo -e "${RED}Failed to start Chrome${NC}"
+      exit 1
+    fi
+  else
+    # Background mode (default)
+    "${CHROME_BINARY}" \
+      --remote-debugging-port=${CHROME_DEBUG_PORT} \
+      --user-data-dir="${CHROME_USER_DIR}" \
+      > /dev/null 2>&1 &
+
+    CHROME_PID=$!
+    echo ${CHROME_PID} > "${PID_FILE}"
+
+    # Wait for Chrome to start
+    sleep 2
+
+    if check_debug_chrome; then
+      echo -e "${GREEN}Chrome started successfully (PID: ${CHROME_PID})${NC}"
+      echo -e "${GREEN}Remote debugging available at http://localhost:${CHROME_DEBUG_PORT}${NC}"
+      echo -e "${YELLOW}Run './dev.sh stop' to stop debug Chrome${NC}"
+    else
+      echo -e "${RED}Failed to start Chrome${NC}"
+      exit 1
+    fi
+  fi
+}
+
+stop_chrome() {
+  echo -e "${YELLOW}Stopping debug Chrome...${NC}"
+
+  if [ -f "${PID_FILE}" ]; then
+    CHROME_PID=$(cat "${PID_FILE}")
+    if ps -p ${CHROME_PID} > /dev/null 2>&1; then
+      kill ${CHROME_PID}
+      rm "${PID_FILE}"
+      echo -e "${GREEN}Debug Chrome stopped (PID: ${CHROME_PID})${NC}"
+    else
+      echo -e "${YELLOW}Debug Chrome is not running (PID: ${CHROME_PID})${NC}"
+      rm "${PID_FILE}"
+    fi
+  else
+    echo -e "${YELLOW}No PID file found. Trying to find debug Chrome process...${NC}"
+    # Try to find Chrome with remote debugging port
+    CHROME_PID=$(ps aux | grep "[C]hrome.*remote-debugging-port=${CHROME_DEBUG_PORT}" | awk '{print $2}' | head -n 1)
+    if [ ! -z "${CHROME_PID}" ]; then
+      kill ${CHROME_PID}
+      echo -e "${GREEN}Debug Chrome stopped (PID: ${CHROME_PID})${NC}"
+    else
+      echo -e "${YELLOW}Debug Chrome is not running${NC}"
+    fi
+  fi
+}
+
+restart_chrome() {
+  stop_chrome
+  sleep 1
+  start_chrome
+}
+
+check_status() {
+  echo -e "${YELLOW}Checking debug Chrome status...${NC}"
+
+  if check_debug_chrome; then
+    echo -e "${GREEN}Debug Chrome is running on port ${CHROME_DEBUG_PORT}${NC}"
+
+    # Try to get PID
+    if [ -f "${PID_FILE}" ]; then
+      CHROME_PID=$(cat "${PID_FILE}")
+      echo -e "PID: ${CHROME_PID}"
+    fi
+
+    # Show browser info
+    curl -s http://localhost:${CHROME_DEBUG_PORT}/json/version | python3 -m json.tool
+  else
+    echo -e "${RED}Debug Chrome is not running${NC}"
+    exit 1
+  fi
+}
+
+case "$1" in
+  start)
+    start_chrome "$2"
+    ;;
+  stop)
+    stop_chrome
+    ;;
+  restart)
+    restart_chrome
+    ;;
+  status|check)
+    check_status
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart|status}"
+    echo ""
+    echo "Commands:"
+    echo "  start [--fg]  - Start Chrome in remote debugging mode"
+    echo "                  --fg: Run in foreground (auto-stops on Ctrl+C)"
+    echo "  stop          - Stop debug Chrome (leaves normal Chrome running)"
+    echo "  restart       - Restart debug Chrome"
+    echo "  status        - Check if debug Chrome is running"
+    echo ""
+    echo "Examples:"
+    echo "  ./dev.sh start           # Start in background"
+    echo "  ./dev.sh start --fg      # Start in foreground (auto-cleanup)"
+    exit 1
+    ;;
+esac
+
+exit 0

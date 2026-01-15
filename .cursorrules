@@ -1,0 +1,274 @@
+# Gemini Improve UI - Cursor Rules
+
+## Project Overview
+
+Chrome extension to improve Google Gemini Web UI with keyboard shortcuts and customizable chat width.
+
+## Debugging Setup
+
+### 1. Launch Chrome in Remote Debugging Mode
+
+To debug the extension or inspect DOM structure, Chrome must run in remote debugging mode.
+
+**Using Helper Script (Recommended):**
+```bash
+# Start debug Chrome in background (won't kill existing Chrome)
+./dev.sh start
+
+# Or start in foreground (auto-stops when you press Ctrl+C)
+./dev.sh start --fg
+
+# Check status
+./dev.sh status
+
+# Stop debug Chrome only (leaves normal Chrome running)
+./dev.sh stop
+
+# Restart debug Chrome
+./dev.sh restart
+```
+
+**Manual Launch (macOS):**
+```bash
+# Launch in remote debugging mode (run from repository root)
+# Only if debug Chrome is not already running
+/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
+  --remote-debugging-port=9222 \
+  --user-data-dir="$(pwd)/.chrome-devtools-mcp" &
+```
+
+**Manual Launch (Linux):**
+```bash
+google-chrome \
+  --remote-debugging-port=9222 \
+  --user-data-dir="$(pwd)/.chrome-devtools-mcp" &
+```
+
+**Important:**
+- `--user-data-dir` is required (default profile disables remote debugging)
+- Port 9222 must not conflict with other applications
+- Login credentials persist in `.chrome-devtools-mcp` directory
+- **Debug Chrome runs separately from your normal Chrome** - you can use both simultaneously
+
+### 2. Verify Chrome DevTools MCP Connection
+
+Pre-configured in `.cursor/mcp.json`. MCP server starts automatically when Cursor restarts.
+
+**MCP Tool Examples:**
+- `list_pages()` - List open pages
+- `take_snapshot()` - Capture DOM structure
+- `evaluate_script()` - Execute JavaScript
+
+**Verify MCP Server:**
+```bash
+# Check if port is open
+curl http://localhost:9222/json/list
+```
+
+### 3. Reload Extension
+
+1. Open Chrome extensions page: `chrome://extensions/`
+2. Enable Developer mode
+3. Click "Load unpacked" and select project root
+4. After code changes, click "Reload" button
+
+### 4. Export DOM Structure
+
+**Method 1: Keyboard Shortcut (Recommended)**
+- Press `Ctrl+Shift+D` on Gemini page
+- DOM structure info copied to clipboard
+
+**Method 2: Manual Console Execution**
+```javascript
+window.analyzePage()           // View DOM structure
+window.copyPageStructure()     // Copy to clipboard
+```
+
+## File Structure
+
+```
+src/
+  ├── content.js       - Main entry point, CSS injection, initialization
+  ├── keyboard.js      - Keyboard event handling
+  ├── chat.js          - Chat screen operations (scroll, focus, etc.)
+  ├── history.js       - History selection mode
+  ├── search.js        - Search page operations
+  ├── settings.js      - Settings management (shortcuts, chat width)
+  ├── autocomplete.js  - Autocomplete functionality
+  └── recent.js        - Recent chats management
+options.html           - Settings page UI
+options.js             - Settings page logic
+manifest.json          - Extension manifest
+```
+
+## Coding Guidelines
+
+### 1. Selector Writing
+
+When querying DOM elements, provide multiple selector candidates in stability order.
+
+**Priority:**
+1. `data-test-id` attributes (Google's identifiers)
+2. ARIA attributes (`aria-label`, `role`)
+3. Semantic tags/attributes
+4. Class names (last resort, prone to changes)
+
+**Example:**
+```javascript
+const menuButton =
+  document.querySelector('button[data-test-id="side-nav-menu-button"]') ||
+  document.querySelector('button[aria-label*="Menu"]') ||
+  document.querySelector('.menu-button');
+```
+
+### 2. CSS Application Rules
+
+Centrally managed in `src/content.js`'s `applyCustomStyles()`.
+- Check existing style ID to prevent duplicate injection
+- Use CSS variables (`--chat-max-width`) for dynamic changes
+- Minimize `!important` usage
+
+### 3. Settings Management
+
+- Save settings using `chrome.storage.sync`
+- Define defaults in `settings.js`'s `DEFAULT_SHORTCUTS`
+- When adding new settings:
+  1. Add default value to `settings.js`
+  2. Add UI to `options.html`
+  3. Add load/save logic to `options.js`
+
+### 4. Async Operations
+
+- Use `setInterval` for periodic checks when waiting for elements
+- Set max attempts to prevent infinite loops
+- Adjust timeout based on context (200ms-2000ms)
+
+**Example:**
+```javascript
+let attempts = 0;
+const maxAttempts = 10;
+
+const interval = setInterval(() => {
+  attempts++;
+  const element = document.querySelector('.target');
+
+  if (element) {
+    clearInterval(interval);
+    // Execute action
+  } else if (attempts >= maxAttempts) {
+    clearInterval(interval);
+  }
+}, 200);
+```
+
+### 5. Error Handling
+
+- Fail silently when user experience is unaffected
+- Minimize console errors
+- Do nothing if element not found (graceful degradation)
+
+## Testing
+
+### 1. Basic Functionality Test
+
+1. Test keyboard shortcuts on Gemini page
+   - `Insert`: Navigate to search page
+   - `Delete`: Toggle sidebar
+   - `Home`: Create new chat
+   - `PageUp/PageDown`: Scroll
+
+2. Test chat width changes
+   - Adjust slider in settings page
+   - Click "Save Settings"
+   - Reload Gemini page
+   - Verify chat width changed
+
+3. Settings persistence
+   - Change and save settings
+   - Restart Chrome
+   - Verify settings retained
+
+### 2. DOM Structure Change Response
+
+When Gemini WebUI updates and DOM changes:
+
+1. Export DOM info with `Ctrl+Shift+D`
+2. Ask AI: "What selector gets element X in this DOM structure?"
+3. Add suggested selectors to appropriate file
+4. List multiple candidates in stability order
+
+## Common Issues & Solutions
+
+### MCP Connection Failed
+
+**Symptom:** MCP tools return errors
+
+**Check:**
+```bash
+# Verify Node version (20.19.0+ required)
+node --version
+
+# Check port
+curl http://localhost:9222/json/list
+```
+
+**Solution:**
+1. Update Node: `nodenv install 20.19.0 && nodenv global 20.19.0`
+2. Restart Chrome (in remote debugging mode)
+3. Restart Cursor
+
+### Extension Not Working
+
+**Symptom:** Keyboard shortcuts don't work
+
+**Check:**
+1. Extension enabled in `chrome://extensions/`
+2. Console (F12) shows errors
+3. Page is Gemini (`gemini.google.com`)
+
+**Solution:**
+1. Reload extension
+2. Reload page (F5)
+3. Check console error messages
+
+### Styles Not Applied
+
+**Symptom:** Chat width doesn't change
+
+**Check:**
+1. DevTools Elements > Styles shows `--chat-max-width` value
+2. Selectors correct (DOM may have changed)
+
+**Solution:**
+1. Re-save width in settings page
+2. Hard reload page (Cmd+Shift+R)
+3. Update selectors if DOM changed
+
+## Pre-Commit Checklist
+
+- [ ] No console errors
+- [ ] Major keyboard shortcuts working
+- [ ] Settings save/load works in settings page
+- [ ] Chat width changes apply
+- [ ] Updated version number in `manifest.json`
+
+## AI Development Assistance
+
+This project assumes collaborative development with AI agents.
+
+**Tips for AI Requests:**
+1. Share DOM structure (export with `Ctrl+Shift+D`)
+2. Describe specific behavior ("When X happens, Y occurs")
+3. Share error messages verbatim
+4. Clearly state expected behavior
+
+**AI-Friendly Question Examples:**
+- "What selector gets the textarea in this DOM structure?"
+- "Function X in chat.js doesn't work. Error: Y"
+- "Changed chat width to 1200px but not reflected"
+
+## Reference Links
+
+- [Chrome Extension Documentation](https://developer.chrome.com/docs/extensions/)
+- [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/)
+- [MCP (Model Context Protocol)](https://modelcontextprotocol.io/)

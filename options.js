@@ -81,7 +81,7 @@ function displayShortcuts() {
 
 // Save settings to storage
 function saveSettings() {
-  chrome.storage.sync.set({ 
+  chrome.storage.sync.set({
     shortcuts: currentShortcuts,
     chatWidth: currentChatWidth
   }, () => {
@@ -99,7 +99,7 @@ function resetSettings() {
   currentShortcuts = JSON.parse(JSON.stringify(DEFAULT_SHORTCUTS));
   currentChatWidth = 900;
   displaySettings();
-  chrome.storage.sync.set({ 
+  chrome.storage.sync.set({
     shortcuts: currentShortcuts,
     chatWidth: currentChatWidth
   }, () => {
@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Chat width slider
   const chatWidthSlider = document.getElementById('chatWidth');
   const chatWidthValue = document.getElementById('chatWidthValue');
-  
+
   if (chatWidthSlider && chatWidthValue) {
     chatWidthSlider.addEventListener('input', (event) => {
       currentChatWidth = parseInt(event.target.value);
