@@ -69,6 +69,17 @@ function handleSearchPageKeydown(event) {
 function handleChatPageKeydown(event) {
   const isInInput = event.target.matches('input, textarea, [contenteditable="true"]');
 
+  // Ctrl+Shift+D: Copy DOM structure for AI analysis
+  if (event.ctrlKey && event.shiftKey && event.code === 'KeyD') {
+    event.preventDefault();
+    if (window.domAnalyzer) {
+      window.domAnalyzer.copyToClipboard();
+    } else {
+      console.error('[Keyboard] DOMAnalyzer not loaded');
+    }
+    return true;
+  }
+
   // Cmd+Shift+P: Toggle pin/unpin (disable only in history selection mode)
   if (isShortcut(event, 'chat.togglePin')) {
     // Disable only in history selection mode

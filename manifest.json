@@ -22,6 +22,7 @@
         "src/history.js",
         "src/autocomplete.js",
         "src/chat.js",
+        "src/dom-analyzer.js",
         "src/keyboard.js",
         "src/content.js"
       ],

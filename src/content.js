@@ -27,18 +27,26 @@ function applyCustomStyles() {
     /* Adjust chat main area width */
     .chat-container {
       max-width: var(--chat-max-width, 900px) !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
     }
 
     chat-window {
       max-width: var(--chat-max-width, 900px) !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
     }
 
     main.main {
       max-width: var(--chat-max-width, 900px) !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
     }
 
     .conversation-container {
       max-width: var(--chat-max-width, 900px) !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
     }
   `;
   document.head.appendChild(style);
