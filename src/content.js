@@ -68,6 +68,22 @@ function initialize() {
     }
   });
 
+  // Detect URL changes in SPA and reinitialize autocomplete
+  let lastUrl = location.href;
+  new MutationObserver(() => {
+    const currentUrl = location.href;
+    if (currentUrl !== lastUrl) {
+      lastUrl = currentUrl;
+      
+      // Wait for new page to load
+      setTimeout(() => {
+        if (typeof initializeAutocomplete === 'function') {
+          initializeAutocomplete();
+        }
+      }, 1500);
+    }
+  }).observe(document, { subtree: true, childList: true });
+
   // Initialize keyboard handlers
   initializeKeyboardHandlers();
 

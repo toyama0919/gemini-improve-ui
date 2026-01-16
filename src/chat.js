@@ -100,6 +100,7 @@ function createNewChat() {
 
   if (newChatLink) {
     newChatLink.click();
+    reinitializeAfterNavigation();
     return;
   }
 
@@ -108,6 +109,7 @@ function createNewChat() {
   if (newChatButton) {
     const clickable = newChatButton.querySelector('a, button') || newChatButton;
     clickable.click();
+    reinitializeAfterNavigation();
     return;
   }
 
@@ -121,7 +123,18 @@ function createNewChat() {
 
   if (newChatBtn) {
     newChatBtn.click();
+    reinitializeAfterNavigation();
   }
+}
+
+// Reinitialize features after navigation
+function reinitializeAfterNavigation() {
+  // Wait for page to load after navigation
+  setTimeout(() => {
+    if (typeof initializeAutocomplete === 'function') {
+      initializeAutocomplete();
+    }
+  }, 1500);
 }
 
 // Focus textarea
