@@ -1,9 +1,49 @@
 // Autocomplete functionality for Gemini chat textarea
 
+// Constants
+const DEBOUNCE_DELAY = 300; // ms to wait before fetching suggestions
+const RETRY_DELAY = 500; // ms to wait before retrying textarea detection
+const DROPDOWN_MARGIN = 10; // px margin for dropdown positioning
+const ITEM_HEIGHT = 40; // px approximate height per item
+const MIN_DROPDOWN_HEIGHT = 100; // px minimum dropdown height
+
+// State
 let autocompleteList = null;
 let selectedIndex = -1;
 let currentSuggestions = [];
 let autocompleteTimeout = null;
+
+// Helper: Check if textarea has multiple lines
+function hasMultipleLines(textarea) {
+  // Gemini's contenteditable uses multiple <p> tags for line breaks
+  // but textContent doesn't include \n, so we check childNodes count
+  return textarea.childNodes.length > 1;
+}
+
+// Helper: Check if autocomplete is currently visible
+function isAutocompleteVisible() {
+  return autocompleteList &&
+         autocompleteList.style.display === 'block' &&
+         currentSuggestions.length > 0;
+}
+
+// Helper: Prevent event propagation
+function preventEventPropagation(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  e.stopImmediatePropagation();
+}
+
+// Helper: Move selection in autocomplete list
+function moveSelection(direction) {
+  if (direction === 'next') {
+    selectedIndex = selectedIndex < 0 ? 0 : (selectedIndex + 1) % currentSuggestions.length;
+  } else if (direction === 'prev') {
+    selectedIndex = selectedIndex < 0 ? currentSuggestions.length - 1 :
+                    selectedIndex <= 0 ? currentSuggestions.length - 1 : selectedIndex - 1;
+  }
+  updateSelectedItem();
+}
 
 // Fetch suggestions from Google
 async function fetchGoogleSuggestions(query) {
@@ -19,7 +59,6 @@ async function fetchGoogleSuggestions(query) {
     const data = await response.json();
     return data[1] || [];
   } catch (error) {
-    console.error('Failed to fetch suggestions:', error);
     return [];
   }
 }
@@ -46,6 +85,33 @@ function createAutocompleteDropdown() {
   document.body.appendChild(list);
   autocompleteList = list;
   return list;
+}
+
+// Position dropdown relative to textarea
+function positionDropdown(textarea, list, suggestions) {
+  const rect = textarea.getBoundingClientRect();
+  list.style.left = `${rect.left}px`;
+  list.style.width = `${rect.width}px`;
+  list.style.display = 'block';
+
+  // Calculate available space above and below textarea
+  const spaceBelow = window.innerHeight - rect.bottom - DROPDOWN_MARGIN;
+  const spaceAbove = rect.top - DROPDOWN_MARGIN;
+  const maxItemsBelow = Math.floor(spaceBelow / ITEM_HEIGHT);
+  const maxItemsAbove = Math.floor(spaceAbove / ITEM_HEIGHT);
+
+  // Show above if not enough space below and more space above
+  if (maxItemsBelow < suggestions.length && maxItemsAbove > maxItemsBelow) {
+    // Show above
+    list.style.bottom = `${window.innerHeight - rect.top}px`;
+    list.style.top = 'auto';
+    list.style.maxHeight = `${Math.max(spaceAbove, MIN_DROPDOWN_HEIGHT)}px`;
+  } else {
+    // Show below
+    list.style.top = `${rect.bottom}px`;
+    list.style.bottom = 'auto';
+    list.style.maxHeight = `${Math.max(spaceBelow, MIN_DROPDOWN_HEIGHT)}px`;
+  }
 }
 
 // Show autocomplete suggestions
@@ -83,31 +149,7 @@ function showAutocompleteSuggestions(textarea, suggestions) {
     list.appendChild(item);
   });
 
-  // Position the dropdown
-  const rect = textarea.getBoundingClientRect();
-  list.style.left = `${rect.left}px`;
-  list.style.width = `${rect.width}px`;
-  list.style.display = 'block';
-
-  // Calculate available space above and below textarea
-  const spaceBelow = window.innerHeight - rect.bottom - 10; // 10px margin
-  const spaceAbove = rect.top - 10; // 10px margin
-  const itemHeight = 40; // Approximate height per item
-  const maxItemsBelow = Math.floor(spaceBelow / itemHeight);
-  const maxItemsAbove = Math.floor(spaceAbove / itemHeight);
-
-  // Show above if not enough space below and more space above
-  if (maxItemsBelow < suggestions.length && maxItemsAbove > maxItemsBelow) {
-    // Show above
-    list.style.bottom = `${window.innerHeight - rect.top}px`;
-    list.style.top = 'auto';
-    list.style.maxHeight = `${Math.max(spaceAbove, 100)}px`;
-  } else {
-    // Show below
-    list.style.top = `${rect.bottom}px`;
-    list.style.bottom = 'auto';
-    list.style.maxHeight = `${Math.max(spaceBelow, 100)}px`;
-  }
+  positionDropdown(textarea, list, suggestions);
 }
 
 // Hide autocomplete suggestions
@@ -164,7 +206,7 @@ function selectSuggestion(textarea, suggestion) {
 function initializeAutocomplete() {
   const textarea = document.querySelector('div[contenteditable="true"][role="textbox"]');
   if (!textarea) {
-    setTimeout(initializeAutocomplete, 500);
+    setTimeout(initializeAutocomplete, RETRY_DELAY);
     return;
   }
 
@@ -189,8 +231,8 @@ function initializeAutocomplete() {
       return;
     }
 
-    // If textarea contains newline, hide autocomplete
-    if (text.includes('\n')) {
+    // If textarea contains multiple lines, hide autocomplete
+    if (hasMultipleLines(textarea)) {
       hideAutocompleteSuggestions();
       return;
     }
@@ -201,81 +243,42 @@ function initializeAutocomplete() {
       const currentText = textarea.textContent || '';
       const currentTrimmed = currentText.trim();
 
-      // If text is now empty, don't fetch
-      if (currentTrimmed.length === 0) {
+      // If text is now empty or has multiple lines, don't fetch
+      if (currentTrimmed.length === 0 || hasMultipleLines(textarea)) {
         hideAutocompleteSuggestions();
         return;
       }
 
       const suggestions = await fetchGoogleSuggestions(currentTrimmed);
       showAutocompleteSuggestions(textarea, suggestions);
-    }, 300);
+    }, DEBOUNCE_DELAY);
   });
 
   // Keydown event handler for Tab and arrow keys
   textarea.addEventListener('keydown', (e) => {
     // Only handle user input
-    if (!e.isTrusted) return;
+    if (!e.isTrusted || e.isComposing) return;
 
-    // Skip if IME is composing (Japanese input)
-    if (e.isComposing) {
-      return;
-    }
-
-    // If textarea contains newline, don't handle autocomplete
-    const text = textarea.textContent;
-    if (text.includes('\n')) {
+    // If textarea contains multiple lines, don't handle autocomplete
+    if (hasMultipleLines(textarea)) {
       hideAutocompleteSuggestions();
       return;
     }
 
-    // Check if autocomplete is visible
-    const isAutocompleteVisible = autocompleteList &&
-                                   autocompleteList.style.display === 'block' &&
-                                   currentSuggestions.length > 0;
-
-    if (!isAutocompleteVisible) {
-      // Allow normal behavior when autocomplete is not visible
+    // Only handle keys if autocomplete is visible
+    if (!isAutocompleteVisible()) {
       return;
     }
 
     // Handle autocomplete keyboard shortcuts
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      // If nothing selected, select first item
-      if (selectedIndex < 0) {
-        selectedIndex = 0;
-      } else {
-        selectedIndex = (selectedIndex + 1) % currentSuggestions.length;
-      }
-      updateSelectedItem();
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      if (selectedIndex < 0) {
-        selectedIndex = 0;
-      } else {
-        selectedIndex = (selectedIndex + 1) % currentSuggestions.length;
-      }
-      updateSelectedItem();
+    if (e.key === 'Tab' || e.key === 'ArrowDown') {
+      preventEventPropagation(e);
+      moveSelection('next');
     } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      if (selectedIndex < 0) {
-        selectedIndex = currentSuggestions.length - 1;
-      } else {
-        selectedIndex = selectedIndex <= 0 ? currentSuggestions.length - 1 : selectedIndex - 1;
-      }
-      updateSelectedItem();
+      preventEventPropagation(e);
+      moveSelection('prev');
     } else if (e.key === 'Enter') {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      // If nothing selected, select first suggestion
+      preventEventPropagation(e);
       const indexToSelect = selectedIndex >= 0 ? selectedIndex : 0;
       selectSuggestion(textarea, currentSuggestions[indexToSelect]);
     } else if (e.key === 'Escape') {
