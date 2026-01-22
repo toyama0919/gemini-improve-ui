@@ -1,7 +1,6 @@
 // Autocomplete functionality for Gemini chat textarea
 
 // Constants
-const DEBOUNCE_DELAY = 300; // ms to wait before fetching suggestions
 const RETRY_DELAY = 500; // ms to wait before retrying textarea detection
 const DROPDOWN_MARGIN = 10; // px margin for dropdown positioning
 const ITEM_HEIGHT = 40; // px approximate height per item
@@ -11,14 +10,6 @@ const MIN_DROPDOWN_HEIGHT = 100; // px minimum dropdown height
 let autocompleteList = null;
 let selectedIndex = -1;
 let currentSuggestions = [];
-let autocompleteTimeout = null;
-
-// Helper: Check if textarea has multiple lines
-function hasMultipleLines(textarea) {
-  // Gemini's contenteditable uses multiple <p> tags for line breaks
-  // but textContent doesn't include \n, so we check childNodes count
-  return textarea.childNodes.length > 1;
-}
 
 // Helper: Check if autocomplete is currently visible
 function isAutocompleteVisible() {
@@ -210,62 +201,31 @@ function initializeAutocomplete() {
     return;
   }
 
-  // Input event handler
-  textarea.addEventListener('input', (e) => {
-    // Only trigger autocomplete for user input (not programmatic input)
-    if (!e.isTrusted) {
-      return;
-    }
+  // Keydown event handler for autocomplete trigger and navigation
+  textarea.addEventListener('keydown', async (e) => {
+    // Only handle user input
+    if (!e.isTrusted || e.isComposing) return;
 
-    // Clear previous timeout
-    if (autocompleteTimeout) {
-      clearTimeout(autocompleteTimeout);
-    }
+    // Ctrl+Space to trigger autocomplete
+    if (e.ctrlKey && e.code === 'Space') {
+      preventEventPropagation(e);
 
-    const text = textarea.textContent || '';
-    const trimmedText = text.trim();
+      const text = textarea.textContent || '';
+      const trimmedText = text.trim();
 
-    // If text is empty or only whitespace, hide autocomplete immediately
-    if (trimmedText.length === 0) {
-      hideAutocompleteSuggestions();
-      return;
-    }
-
-    // If textarea contains multiple lines, hide autocomplete
-    if (hasMultipleLines(textarea)) {
-      hideAutocompleteSuggestions();
-      return;
-    }
-
-    // Wait for user to stop typing
-    autocompleteTimeout = setTimeout(async () => {
-      // Re-check text content before fetching (user might have deleted everything)
-      const currentText = textarea.textContent || '';
-      const currentTrimmed = currentText.trim();
-
-      // If text is now empty or has multiple lines, don't fetch
-      if (currentTrimmed.length === 0 || hasMultipleLines(textarea)) {
+      // If text is empty, don't fetch suggestions
+      if (trimmedText.length === 0) {
         hideAutocompleteSuggestions();
         return;
       }
 
-      const suggestions = await fetchGoogleSuggestions(currentTrimmed);
+      // Fetch and show suggestions
+      const suggestions = await fetchGoogleSuggestions(trimmedText);
       showAutocompleteSuggestions(textarea, suggestions);
-    }, DEBOUNCE_DELAY);
-  });
-
-  // Keydown event handler for Tab and arrow keys
-  textarea.addEventListener('keydown', (e) => {
-    // Only handle user input
-    if (!e.isTrusted || e.isComposing) return;
-
-    // If textarea contains multiple lines, don't handle autocomplete
-    if (hasMultipleLines(textarea)) {
-      hideAutocompleteSuggestions();
       return;
     }
 
-    // Only handle keys if autocomplete is visible
+    // Handle navigation keys only if autocomplete is visible
     if (!isAutocompleteVisible()) {
       return;
     }
