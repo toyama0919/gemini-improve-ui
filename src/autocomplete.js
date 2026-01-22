@@ -206,8 +206,8 @@ function initializeAutocomplete() {
     // Only handle user input
     if (!e.isTrusted || e.isComposing) return;
 
-    // Ctrl+Space to trigger autocomplete
-    if (e.ctrlKey && e.code === 'Space') {
+    // Cmd+Space to trigger autocomplete
+    if (e.metaKey && e.code === 'Space') {
       preventEventPropagation(e);
 
       const text = textarea.textContent || '';

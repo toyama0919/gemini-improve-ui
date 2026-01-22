@@ -74,7 +74,7 @@ function initialize() {
     const currentUrl = location.href;
     if (currentUrl !== lastUrl) {
       lastUrl = currentUrl;
-      
+
       // Wait for new page to load
       setTimeout(() => {
         if (typeof initializeAutocomplete === 'function') {
