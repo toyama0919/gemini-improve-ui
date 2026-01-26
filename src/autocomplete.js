@@ -2,6 +2,7 @@
 
 // Constants
 const RETRY_DELAY = 500; // ms to wait before retrying textarea detection
+const DEBOUNCE_DELAY = 300; // ms to wait before fetching suggestions
 const DROPDOWN_MARGIN = 10; // px margin for dropdown positioning
 const ITEM_HEIGHT = 40; // px approximate height per item
 const MIN_DROPDOWN_HEIGHT = 100; // px minimum dropdown height
@@ -10,6 +11,7 @@ const MIN_DROPDOWN_HEIGHT = 100; // px minimum dropdown height
 let autocompleteList = null;
 let selectedIndex = -1;
 let currentSuggestions = [];
+let autocompleteTimeout = null;
 
 // Helper: Check if autocomplete is currently visible
 function isAutocompleteVisible() {
@@ -78,14 +80,14 @@ function createAutocompleteDropdown() {
   return list;
 }
 
-// Position dropdown relative to textarea
-function positionDropdown(textarea, list, suggestions) {
-  const rect = textarea.getBoundingClientRect();
+// Position dropdown relative to input element
+function positionDropdown(inputElement, list, suggestions) {
+  const rect = inputElement.getBoundingClientRect();
   list.style.left = `${rect.left}px`;
   list.style.width = `${rect.width}px`;
   list.style.display = 'block';
 
-  // Calculate available space above and below textarea
+  // Calculate available space above and below input
   const spaceBelow = window.innerHeight - rect.bottom - DROPDOWN_MARGIN;
   const spaceAbove = rect.top - DROPDOWN_MARGIN;
   const maxItemsBelow = Math.floor(spaceBelow / ITEM_HEIGHT);
@@ -106,7 +108,7 @@ function positionDropdown(textarea, list, suggestions) {
 }
 
 // Show autocomplete suggestions
-function showAutocompleteSuggestions(textarea, suggestions) {
+function showAutocompleteSuggestions(inputElement, suggestions) {
   if (!suggestions || suggestions.length === 0) {
     hideAutocompleteSuggestions();
     return;
@@ -134,13 +136,13 @@ function showAutocompleteSuggestions(textarea, suggestions) {
     });
 
     item.addEventListener('click', () => {
-      selectSuggestion(textarea, suggestion);
+      selectSuggestion(inputElement, suggestion);
     });
 
     list.appendChild(item);
   });
 
-  positionDropdown(textarea, list, suggestions);
+  positionDropdown(inputElement, list, suggestions);
 }
 
 // Hide autocomplete suggestions
@@ -167,28 +169,41 @@ function updateSelectedItem() {
 }
 
 // Select a suggestion
-function selectSuggestion(textarea, suggestion) {
-  // Clear content
-  while (textarea.firstChild) {
-    textarea.removeChild(textarea.firstChild);
+function selectSuggestion(inputElement, suggestion) {
+  // Check if it's a contenteditable div or input element
+  if (inputElement.contentEditable === 'true') {
+    // Clear content for contenteditable
+    while (inputElement.firstChild) {
+      inputElement.removeChild(inputElement.firstChild);
+    }
+
+    // Set suggestion text
+    const p = document.createElement('p');
+    p.textContent = suggestion;
+    inputElement.appendChild(p);
+
+    // Focus and move cursor to end
+    inputElement.focus();
+    const range = document.createRange();
+    const sel = window.getSelection();
+    range.selectNodeContents(inputElement);
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
+
+    // Dispatch input event
+    inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+  } else {
+    // Handle regular input element
+    inputElement.value = suggestion;
+    inputElement.focus();
+
+    // Move cursor to end
+    inputElement.setSelectionRange(suggestion.length, suggestion.length);
+
+    // Dispatch input event
+    inputElement.dispatchEvent(new Event('input', { bubbles: true }));
   }
-
-  // Set suggestion text
-  const p = document.createElement('p');
-  p.textContent = suggestion;
-  textarea.appendChild(p);
-
-  // Focus and move cursor to end
-  textarea.focus();
-  const range = document.createRange();
-  const sel = window.getSelection();
-  range.selectNodeContents(textarea);
-  range.collapse(false);
-  sel.removeAllRanges();
-  sel.addRange(range);
-
-  // Dispatch input event
-  textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
   hideAutocompleteSuggestions();
 }
@@ -255,4 +270,100 @@ function initializeAutocomplete() {
       hideAutocompleteSuggestions();
     }
   });
+}
+
+// Initialize autocomplete for search page input
+function initializeSearchAutocomplete() {
+  // Check if we're on search page
+  if (!window.location.pathname.startsWith('/search')) {
+    return;
+  }
+
+  let attempts = 0;
+  const maxAttempts = 10;
+
+  const searchInputInterval = setInterval(() => {
+    attempts++;
+    const searchInput = document.querySelector('input[data-test-id="search-input"]') ||
+                       document.querySelector('input[type="text"][placeholder*="検索"]') ||
+                       document.querySelector('input[type="text"]');
+
+    if (searchInput) {
+      clearInterval(searchInputInterval);
+      console.log('Gemini Autocomplete: Found search input');
+
+      // Input event handler for auto-trigger
+      searchInput.addEventListener('input', (e) => {
+        if (!e.isTrusted) return;
+
+        // Clear previous timeout
+        if (autocompleteTimeout) {
+          clearTimeout(autocompleteTimeout);
+        }
+
+        const text = searchInput.value || '';
+        const trimmedText = text.trim();
+
+        // If text is empty, hide autocomplete
+        if (trimmedText.length === 0) {
+          hideAutocompleteSuggestions();
+          return;
+        }
+
+        // Wait for user to stop typing
+        autocompleteTimeout = setTimeout(async () => {
+          const currentText = searchInput.value || '';
+          const currentTrimmed = currentText.trim();
+
+          if (currentTrimmed.length === 0) {
+            hideAutocompleteSuggestions();
+            return;
+          }
+
+          const suggestions = await fetchGoogleSuggestions(currentTrimmed);
+          showAutocompleteSuggestions(searchInput, suggestions);
+        }, DEBOUNCE_DELAY);
+      });
+
+      // Keydown event handler for navigation
+      searchInput.addEventListener('keydown', (e) => {
+        if (!e.isTrusted || e.isComposing) return;
+
+        // Only handle navigation keys if autocomplete is visible
+        if (!isAutocompleteVisible()) {
+          return;
+        }
+
+        // Handle autocomplete keyboard shortcuts
+        if (e.key === 'Tab' || e.key === 'ArrowDown') {
+          preventEventPropagation(e);
+          moveSelection('next');
+        } else if (e.key === 'ArrowUp') {
+          preventEventPropagation(e);
+          moveSelection('prev');
+        } else if (e.key === 'Enter') {
+          if (selectedIndex >= 0) {
+            preventEventPropagation(e);
+            selectSuggestion(searchInput, currentSuggestions[selectedIndex]);
+          }
+          // If no selection, let the default search happen
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          hideAutocompleteSuggestions();
+        }
+      }, true);
+
+      // Click outside to close
+      document.addEventListener('click', (e) => {
+        if (autocompleteList &&
+            !autocompleteList.contains(e.target) &&
+            e.target !== searchInput) {
+          hideAutocompleteSuggestions();
+        }
+      });
+    } else if (attempts >= maxAttempts) {
+      clearInterval(searchInputInterval);
+      console.log('Gemini Autocomplete: Search input not found');
+    }
+  }, 500);
 }

@@ -2,6 +2,15 @@
 
 // Handle search page keyboard events
 function handleSearchPageKeydown(event) {
+  // If autocomplete is visible, don't handle navigation keys
+  if (typeof isAutocompleteVisible === 'function' && isAutocompleteVisible()) {
+    // Let autocomplete handle these keys
+    if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || 
+        event.key === 'Enter' || event.key === 'Tab' || event.key === 'Escape') {
+      return false;
+    }
+  }
+
   // Insert: Toggle between search page and chat page
   if (isShortcut(event, 'chat.navigateToSearch')) {
     event.preventDefault();
@@ -68,6 +77,15 @@ function handleSearchPageKeydown(event) {
 // Handle chat page keyboard events
 function handleChatPageKeydown(event) {
   const isInInput = event.target.matches('input, textarea, [contenteditable="true"]');
+
+  // If autocomplete is visible, don't handle navigation keys
+  if (typeof isAutocompleteVisible === 'function' && isAutocompleteVisible()) {
+    // Let autocomplete handle these keys
+    if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || 
+        event.key === 'Enter' || event.key === 'Tab' || event.key === 'Escape') {
+      return false;
+    }
+  }
 
   // Ctrl+Shift+D: Copy DOM structure for AI analysis
   if (event.ctrlKey && event.shiftKey && event.code === 'KeyD') {

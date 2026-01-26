@@ -80,6 +80,9 @@ function initialize() {
         if (typeof initializeAutocomplete === 'function') {
           initializeAutocomplete();
         }
+        if (typeof initializeSearchAutocomplete === 'function') {
+          initializeSearchAutocomplete();
+        }
       }, 1500);
     }
   }).observe(document, { subtree: true, childList: true });
@@ -95,6 +98,9 @@ function initialize() {
   // Initialize based on current page
   if (isSearchPage()) {
     initializeSearchPage();
+    if (typeof initializeSearchAutocomplete === 'function') {
+      initializeSearchAutocomplete();
+    }
   } else {
     initializeChatPage();
   }
