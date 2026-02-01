@@ -1,15 +1,19 @@
 # Gemini Chat UI Improvements
 
-A Chrome extension that enhances Gemini Chat UI with powerful keyboard shortcuts.
+A Chrome extension that enhances Google Gemini Web UI with keyboard shortcuts, customizable chat width, and autocomplete features.
 
 ## Features
 
-- Keyboard shortcuts for efficient navigation
-- Chat history selection and navigation
+- Customizable keyboard shortcuts for efficient navigation
+- Adjustable chat area width (600px - 1600px)
+- Keyboard navigation for chat history
+- Recent chats history tracking
 - Efficient search result browsing
-- Sidebar toggle
+- Sidebar element hiding (Gems list, My Stuff section)
+- Chat pin/unpin functionality
 - Quick access to copy buttons
-- DOM structure analysis for AI agents
+- Autocomplete for faster input
+- DOM structure analysis for AI developers
 
 ## Keyboard Shortcuts
 
@@ -25,6 +29,7 @@ All keyboard shortcuts can be customized via the extension's options page. The d
 - `↑` / `↓`: Navigate through history (in history selection mode)
 - `Enter`: Open selected history
 - `Esc`: Exit history selection mode
+- `Cmd+Shift+P`: Toggle pin/unpin chat
 
 ### Search Screen (Default)
 
@@ -38,13 +43,21 @@ All keyboard shortcuts can be customized via the extension's options page. The d
 - `↑` / `↓` (when copy button is focused): Move to other copy buttons
 - `Enter`: Click focused copy button
 
-### AI Agent Support
+### Autocomplete
+
+- `Tab`: Replace current word with selected suggestion
+- `↑` / `↓`: Navigate through autocomplete suggestions
+- `Esc`: Close autocomplete menu
+
+### AI Developer Support
 
 - `Ctrl+Shift+D`: Copy current page DOM structure to clipboard for AI analysis
   - Useful for developing extensions that adapt to UI changes
   - Exports element selectors, interactive components, and page metadata
 
-## Customizing Shortcuts
+## Customizing Settings
+
+### Keyboard Shortcuts
 
 1. Right-click the extension icon in Chrome's toolbar
 2. Select "Options" from the menu
@@ -53,6 +66,15 @@ All keyboard shortcuts can be customized via the extension's options page. The d
 5. Reload the Gemini Chat page to use the new shortcuts
 
 You can reset all shortcuts to their default values by clicking the "Reset to Default" button on the options page.
+
+### Chat Width
+
+You can adjust the maximum width of the chat area (Range: 600px - 1600px, Default: 900px).
+
+1. Open the extension's options page
+2. Adjust the "Chat area width" slider
+3. Click "Save Settings"
+4. Changes apply immediately (no page reload required)
 
 ## Installation
 
@@ -126,18 +148,23 @@ For detailed development instructions, including Chrome DevTools MCP setup, see 
 
 ```
 gemini-improve-ui/
-├── manifest.json      # Chrome extension manifest file
-├── options.html       # Settings page
+├── manifest.json      # Chrome extension manifest file (v3.0)
+├── options.html       # Settings page UI
 ├── options.js         # Settings page script
+├── dev.sh             # Development helper script for Chrome debugging
+├── .cursor/           # Cursor IDE configuration
+│   └── mcp.json       # MCP server configuration for Chrome DevTools
 ├── src/               # Source code
-│   ├── settings.js    # Settings management
-│   ├── content.js     # Main entry point
+│   ├── settings.js    # Settings management and storage
+│   ├── content.js     # Main entry point and CSS injection
+│   ├── keyboard.js    # Keyboard event handlers
+│   ├── chat.js        # Chat UI functionality (textarea, sidebar, scroll)
+│   ├── history.js     # Chat history selection mode
 │   ├── search.js      # Search page functionality
-│   ├── history.js     # Chat history selection
-│   ├── chat.js        # Chat UI functionality
-│   ├── dom-analyzer.js # DOM structure analysis for AI
-│   └── keyboard.js    # Keyboard event handlers
-├── icons/             # Icon images
+│   ├── recent.js      # Recent chats tracking
+│   ├── autocomplete.js # Autocomplete functionality
+│   └── dom-analyzer.js # DOM structure analysis for AI
+├── icons/             # Extension icons
 │   ├── icon.svg       # SVG source
 │   ├── icon16.png     # 16x16 icon
 │   ├── icon48.png     # 48x48 icon
@@ -150,12 +177,14 @@ gemini-improve-ui/
 The code is organized into modular files for better maintainability:
 
 - **settings.js**: Manages keyboard shortcut settings and storage
-- **search.js**: Handles search result navigation and selection
+- **content.js**: Main initialization, entry point, and CSS injection
+- **keyboard.js**: Central keyboard event handling and shortcut routing
+- **chat.js**: Manages textarea, sidebar, scrolling, copy buttons, and pin functionality
 - **history.js**: Manages chat history selection mode
-- **chat.js**: Manages textarea, sidebar, scrolling, and copy buttons
+- **search.js**: Handles search result navigation and selection
+- **recent.js**: Tracks and manages recent chats history
+- **autocomplete.js**: Provides autocomplete functionality for faster input
 - **dom-analyzer.js**: Analyzes page structure for AI agents
-- **keyboard.js**: Central keyboard event handling
-- **content.js**: Main initialization and entry point
 
 ### Selector Strategy
 
