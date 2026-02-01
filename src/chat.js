@@ -80,7 +80,7 @@ function getChatArea() {
 // Scroll chat area
 function scrollChatArea(direction) {
   const chatArea = getChatArea();
-  const scrollAmount = window.innerHeight * 0.2;
+  const scrollAmount = window.innerHeight * 0.1;
   const scrollValue = direction === 'up' ? -scrollAmount : scrollAmount;
 
   // Always no animation for speed
