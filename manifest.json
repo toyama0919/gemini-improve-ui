@@ -17,7 +17,6 @@
       ],
       "js": [
         "src/settings.js",
-        "src/recent.js",
         "src/search.js",
         "src/history.js",
         "src/autocomplete.js",

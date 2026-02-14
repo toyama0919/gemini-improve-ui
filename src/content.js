@@ -90,11 +90,6 @@ function initialize() {
   // Initialize keyboard handlers
   initializeKeyboardHandlers();
 
-  // Initialize recent chats
-  if (typeof initializeRecentChats === 'function') {
-    initializeRecentChats();
-  }
-
   // Initialize based on current page
   if (isSearchPage()) {
     initializeSearchPage();
