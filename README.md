@@ -64,14 +64,9 @@ Select any text on a webpage, right-click, and choose from Gemini actions:
 **General Actions:**
 - **Geminiに質問** - Ask Gemini directly with selected text
 - **Geminiで説明** - Get an explanation of the selected text
-- **Geminiで翻訳** - Translate text (auto-detects language)
-- **Geminiで要約** - Summarize long text
 
 **Code Actions:**
 - **コードレビュー** - Review code for improvements
-- **バグを探す** - Find potential bugs
-- **コードを最適化** - Optimize code performance
-- **テストコードを生成** - Generate unit tests
 
 All actions open a new Gemini tab with the query pre-filled and automatically sent.
 

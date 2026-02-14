@@ -1,8 +1,31 @@
 // Settings management
 
+// Default context menu items (presets)
+const DEFAULT_CONTEXT_MENU_ITEMS = [
+  {
+    id: 'preset-1',
+    title: 'Geminiに質問: "%s"',
+    prompt: '{{text}}',
+    enabled: true
+  },
+  {
+    id: 'preset-2',
+    title: 'Geminiで説明',
+    prompt: '次のテキストを説明してください：\n\n{{text}}',
+    enabled: true
+  },
+  {
+    id: 'preset-3',
+    title: 'コードレビュー',
+    prompt: '次のコードをレビューして、改善点を指摘してください：\n\n```\n{{text}}\n```',
+    enabled: true
+  }
+];
+
 // Default context menu settings
 const DEFAULT_CONTEXT_MENU_SETTINGS = {
-  enabled: true
+  enabled: true,
+  items: DEFAULT_CONTEXT_MENU_ITEMS
 };
 
 // Default keyboard shortcuts

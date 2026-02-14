@@ -1,77 +1,69 @@
 // Background script for context menu
 
-// Context menu templates
-const MENU_ITEMS = [
+// Default preset menu items (used on first install)
+const DEFAULT_PRESET_ITEMS = [
   {
-    id: 'gemini-ask',
+    id: 'preset-1',
     title: 'Geminiに質問: "%s"',
-    contexts: ['selection'],
-    type: 'normal'
+    prompt: '{{text}}',
+    enabled: true
   },
   {
-    id: 'gemini-explain',
+    id: 'preset-2',
     title: 'Geminiで説明',
-    contexts: ['selection'],
-    type: 'normal'
+    prompt: '次のテキストを説明してください：\n\n{{text}}',
+    enabled: true
   },
   {
-    id: 'gemini-translate',
-    title: 'Geminiで翻訳',
-    contexts: ['selection'],
-    type: 'normal'
-  },
-  {
-    id: 'gemini-summarize',
-    title: 'Geminiで要約',
-    contexts: ['selection'],
-    type: 'normal'
-  },
-  {
-    id: 'separator-1',
-    type: 'separator',
-    contexts: ['selection']
-  },
-  {
-    id: 'gemini-review-code',
+    id: 'preset-3',
     title: 'コードレビュー',
-    contexts: ['selection'],
-    type: 'normal'
-  },
-  {
-    id: 'gemini-find-bugs',
-    title: 'バグを探す',
-    contexts: ['selection'],
-    type: 'normal'
-  },
-  {
-    id: 'gemini-optimize',
-    title: 'コードを最適化',
-    contexts: ['selection'],
-    type: 'normal'
-  },
-  {
-    id: 'gemini-write-tests',
-    title: 'テストコードを生成',
-    contexts: ['selection'],
-    type: 'normal'
+    prompt: '次のコードをレビューして、改善点を指摘してください：\n\n```\n{{text}}\n```',
+    enabled: true
   }
 ];
+
+// Get menu items from storage
+function getMenuItems(callback) {
+  chrome.storage.sync.get(['contextMenuSettings'], (result) => {
+    let settings = result.contextMenuSettings;
+    
+    // Initialize with default presets on first run
+    if (!settings || !settings.items) {
+      settings = {
+        enabled: true,
+        items: DEFAULT_PRESET_ITEMS
+      };
+      chrome.storage.sync.set({ contextMenuSettings: settings });
+    }
+    
+    // Filter only enabled items
+    const enabledItems = settings.items.filter(item => item.enabled !== false);
+    callback(enabledItems);
+  });
+}
 
 // Create context menus
 function createContextMenus() {
   chrome.contextMenus.removeAll(() => {
-    // Create parent menu
-    chrome.contextMenus.create({
-      id: 'gemini-parent',
-      title: 'Gemini',
-      contexts: ['selection']
-    });
+    getMenuItems((menuItems) => {
+      if (menuItems.length === 0) return;
 
-    // Create menu items
-    MENU_ITEMS.forEach(item => {
+      // Create parent menu
       chrome.contextMenus.create({
-        ...item,
-        parentId: 'gemini-parent'
+        id: 'gemini-parent',
+        title: 'Gemini',
+        contexts: ['selection']
+      });
+
+      // Create menu items
+      menuItems.forEach(item => {
+        chrome.contextMenus.create({
+          id: item.id,
+          title: item.title,
+          contexts: ['selection'],
+          type: 'normal',
+          parentId: 'gemini-parent'
+        });
       });
     });
   });
@@ -92,6 +84,24 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
+// Load settings and create menus on startup (when browser starts)
+chrome.runtime.onStartup.addListener(() => {
+  chrome.storage.sync.get(['contextMenuSettings'], (result) => {
+    const settings = result.contextMenuSettings || { enabled: true };
+    if (settings.enabled) {
+      createContextMenus();
+    }
+  });
+});
+
+// Also create menus when service worker wakes up
+chrome.storage.sync.get(['contextMenuSettings'], (result) => {
+  const settings = result.contextMenuSettings || { enabled: true };
+  if (settings.enabled) {
+    createContextMenus();
+  }
+});
+
 // Listen for messages from options page
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'updateContextMenu') {
@@ -108,50 +118,22 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   const selectedText = info.selectionText;
   if (!selectedText) return;
 
-  let query = '';
+  // Get all menu items (not just enabled ones) to find the clicked item
+  chrome.storage.sync.get(['contextMenuSettings'], (result) => {
+    const settings = result.contextMenuSettings;
+    if (!settings || !settings.items) return;
+    
+    const menuItem = settings.items.find(item => item.id === info.menuItemId);
+    if (!menuItem || !menuItem.prompt) return;
 
-  switch (info.menuItemId) {
-    case 'gemini-ask':
-      // Direct question
-      query = selectedText;
-      break;
+    // Replace {{text}} placeholder with selected text
+    const query = menuItem.prompt.replace(/\{\{text\}\}/g, selectedText);
 
-    case 'gemini-explain':
-      query = `次のテキストを説明してください：\n\n${selectedText}`;
-      break;
+    // Build URL (without send parameter, uses default behavior)
+    const encodedQuery = encodeURIComponent(query);
+    const url = `https://gemini.google.com/app?q=${encodedQuery}`;
 
-    case 'gemini-translate':
-      query = `次のテキストを英語に翻訳してください（英語の場合は日本語に翻訳）：\n\n${selectedText}`;
-      break;
-
-    case 'gemini-summarize':
-      query = `次のテキストを要約してください：\n\n${selectedText}`;
-      break;
-
-    case 'gemini-review-code':
-      query = `次のコードをレビューして、改善点を指摘してください：\n\n\`\`\`\n${selectedText}\n\`\`\``;
-      break;
-
-    case 'gemini-find-bugs':
-      query = `次のコードのバグや潜在的な問題を見つけてください：\n\n\`\`\`\n${selectedText}\n\`\`\``;
-      break;
-
-    case 'gemini-optimize':
-      query = `次のコードを最適化してください：\n\n\`\`\`\n${selectedText}\n\`\`\``;
-      break;
-
-    case 'gemini-write-tests':
-      query = `次のコードのユニットテストを書いてください：\n\n\`\`\`\n${selectedText}\n\`\`\``;
-      break;
-
-    default:
-      return;
-  }
-
-  // Build URL (without send parameter, uses default behavior)
-  const encodedQuery = encodeURIComponent(query);
-  const url = `https://gemini.google.com/app?q=${encodedQuery}`;
-
-  // Open in new tab
-  chrome.tabs.create({ url });
+    // Open in new tab
+    chrome.tabs.create({ url });
+  });
 });
