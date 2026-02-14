@@ -1,42 +1,27 @@
-# Key Coding Rules
+# Chrome Extension for Gemini UI
 
-### Selector Priority
-1. `data-test-id` (most stable)
-2. ARIA attributes (`aria-label`, `role`)
-3. Semantic attributes
-4. Class names (last resort)
+## Core Rules
 
-Always provide fallback selectors:
+**Selectors**: ARIA > semantic > class names. Always provide multiple fallbacks
 ```javascript
-const el = document.querySelector('[data-test-id="foo"]') ||
-           document.querySelector('[aria-label*="Foo"]') ||
+const el = document.querySelector('[aria-label*="Foo"]') || 
+           document.querySelector('[data-test-id="foo"]') || 
            document.querySelector('.foo');
 ```
 
-### Settings Management
-1. Add default in `settings.js`
-2. Add UI in `options.html`
-3. Add load/save in `options.js`
-4. Use `chrome.storage.sync`
+**Settings**: Define defaults in `settings.js` → Add UI in `options.html` → Implement save logic in `options.js` → Persist with `chrome.storage.sync`
 
-### Async Element Waiting
-Use `setInterval` with max attempts (10) and timeout (200ms-2000ms).
+**Async Waiting**: Use `setInterval` with max 10 retries at 200ms-2000ms intervals
 
-### Error Handling
-Fail silently. No console spam. Graceful degradation.
+**Errors**: Fail silently. No console spam. Graceful degradation.
 
-## DOM Changes
-When Gemini UI changes:
-1. Press `Ctrl+Shift+D` to export DOM
-2. Ask AI for new selectors
-3. Add fallback selectors in priority order
+## Development
 
-## Common Issues
+**DOM Changes**: `Ctrl+Shift+D` exports DOM structure → AI analysis → Update fallback selectors
 
-**MCP fails**: Check Node 20.19.0+, restart Chrome/Cursor
-**Shortcuts don't work**: Reload extension at `chrome://extensions/`
-**Styles not applied**: Check `--chat-max-width` in DevTools, hard reload
+**Chrome DevTools MCP**: `./dev.sh start` launches debug Chrome → Cursor auto-connects → `./dev.sh stop` to terminate
 
-## AI Development Tips
-
-Share DOM structure (`Ctrl+Shift+D`), error messages, and expected behavior. Ask specific questions like "What selector for X in this DOM?"
+**Troubleshooting**: 
+- MCP fails → Check Node 20.19.0+, restart Chrome/Cursor
+- Shortcuts inactive → Reload at `chrome://extensions/`
+- Styles not applied → Check `--chat-max-width` in DevTools, hard reload
