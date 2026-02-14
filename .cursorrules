@@ -2,17 +2,6 @@
 
 Chrome extension to improve Google Gemini Web UI with keyboard shortcuts and customizable chat width.
 
-## Quick Start Debugging
-
-```bash
-./dev.sh start         # Start debug Chrome in background (auto-checks if already running)
-./dev.sh stop          # Stop debug Chrome (only kills port 9222, normal Chrome unaffected)
-./dev.sh restart       # Restart debug Chrome (useful for clean state)
-curl http://localhost:9222/json/list  # Verify connection
-```
-
-MCP is pre-configured in `.cursor/mcp.json`. Use `list_pages()`, `take_snapshot()`, `evaluate_script()` tools.
-
 ## File Structure
 
 - `src/content.js` - Entry point, CSS injection
