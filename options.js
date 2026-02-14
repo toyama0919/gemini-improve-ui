@@ -23,20 +23,31 @@ const DEFAULT_SHORTCUTS = {
   }
 };
 
+// Default context menu settings
+const DEFAULT_CONTEXT_MENU_SETTINGS = {
+  enabled: true
+};
+
 // Current shortcuts
 let currentShortcuts = JSON.parse(JSON.stringify(DEFAULT_SHORTCUTS));
 
 // Current chat width
 let currentChatWidth = 900;
 
+// Current context menu settings
+let currentContextMenuSettings = JSON.parse(JSON.stringify(DEFAULT_CONTEXT_MENU_SETTINGS));
+
 // Load settings from storage
 function loadSettings() {
-  chrome.storage.sync.get(['shortcuts', 'chatWidth'], (result) => {
+  chrome.storage.sync.get(['shortcuts', 'chatWidth', 'contextMenuSettings'], (result) => {
     if (result.shortcuts) {
       currentShortcuts = result.shortcuts;
     }
     if (result.chatWidth) {
       currentChatWidth = result.chatWidth;
+    }
+    if (result.contextMenuSettings) {
+      currentContextMenuSettings = result.contextMenuSettings;
     }
     displaySettings();
   });
@@ -49,6 +60,12 @@ function loadShortcuts() {
 
 // Display settings in UI
 function displaySettings() {
+  // Context menu
+  const contextMenuCheckbox = document.getElementById('contextMenuEnabled');
+  if (contextMenuCheckbox) {
+    contextMenuCheckbox.checked = currentContextMenuSettings.enabled;
+  }
+
   // Chat width
   const chatWidthSlider = document.getElementById('chatWidth');
   const chatWidthValue = document.getElementById('chatWidthValue');
@@ -83,8 +100,14 @@ function displayShortcuts() {
 function saveSettings() {
   chrome.storage.sync.set({
     shortcuts: currentShortcuts,
-    chatWidth: currentChatWidth
+    chatWidth: currentChatWidth,
+    contextMenuSettings: currentContextMenuSettings
   }, () => {
+    // Notify background script to update context menu
+    chrome.runtime.sendMessage({
+      type: 'updateContextMenu',
+      enabled: currentContextMenuSettings.enabled
+    });
     showMessage('Settings saved successfully!');
   });
 }
@@ -98,11 +121,18 @@ function saveShortcuts() {
 function resetSettings() {
   currentShortcuts = JSON.parse(JSON.stringify(DEFAULT_SHORTCUTS));
   currentChatWidth = 900;
+  currentContextMenuSettings = JSON.parse(JSON.stringify(DEFAULT_CONTEXT_MENU_SETTINGS));
   displaySettings();
   chrome.storage.sync.set({
     shortcuts: currentShortcuts,
-    chatWidth: currentChatWidth
+    chatWidth: currentChatWidth,
+    contextMenuSettings: currentContextMenuSettings
   }, () => {
+    // Notify background script to update context menu
+    chrome.runtime.sendMessage({
+      type: 'updateContextMenu',
+      enabled: currentContextMenuSettings.enabled
+    });
     showMessage('Settings reset to default!');
   });
 }
@@ -144,6 +174,14 @@ function handleKeyInput(event, inputId) {
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
+
+  // Context menu checkbox
+  const contextMenuCheckbox = document.getElementById('contextMenuEnabled');
+  if (contextMenuCheckbox) {
+    contextMenuCheckbox.addEventListener('change', (event) => {
+      currentContextMenuSettings.enabled = event.target.checked;
+    });
+  }
 
   // Chat width slider
   const chatWidthSlider = document.getElementById('chatWidth');

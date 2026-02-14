@@ -1,13 +1,17 @@
 {
   "manifest_version": 3,
   "name": "Gemini Chat UI Improvements",
-  "version": "3.0",
-  "description": "Gemini Chat UI improvements with keyboard shortcuts",
+  "version": "3.1",
+  "description": "Gemini Chat UI improvements with keyboard shortcuts and context menu",
   "author": "toyama0919",
-  "permissions": ["storage"],
+  "permissions": ["storage", "contextMenus"],
   "host_permissions": [
-    "https://gemini.google.com/*"
+    "https://gemini.google.com/*",
+    "https://www.google.co.jp/*"
   ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
   "options_page": "options.html",
   "content_scripts": [
     {

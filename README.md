@@ -14,6 +14,8 @@ A Chrome extension that enhances Google Gemini Web UI with keyboard shortcuts, c
 - Quick access to copy buttons
 - Autocomplete for faster input
 - DOM structure analysis for AI developers
+- **Context menu integration** - Right-click on selected text to send to Gemini
+- **URL query parameter** - Open Gemini with pre-filled questions via URL (`?q=...`)
 
 ## Keyboard Shortcuts
 
@@ -55,7 +57,74 @@ All keyboard shortcuts can be customized via the extension's options page. The d
   - Useful for developing extensions that adapt to UI changes
   - Exports element selectors, interactive components, and page metadata
 
+### Context Menu (Right-Click Menu)
+
+Select any text on a webpage, right-click, and choose from Gemini actions:
+
+**General Actions:**
+- **Geminiに質問** - Ask Gemini directly with selected text
+- **Geminiで説明** - Get an explanation of the selected text
+- **Geminiで翻訳** - Translate text (auto-detects language)
+- **Geminiで要約** - Summarize long text
+
+**Code Actions:**
+- **コードレビュー** - Review code for improvements
+- **バグを探す** - Find potential bugs
+- **コードを最適化** - Optimize code performance
+- **テストコードを生成** - Generate unit tests
+
+All actions open a new Gemini tab with the query pre-filled and automatically sent.
+
+### URL Query Parameter
+
+You can open Gemini with a pre-filled question by using the `q` parameter in the URL:
+
+```
+https://gemini.google.com/app?q=YOUR_QUESTION
+```
+
+**Basic usage:**
+```
+https://gemini.google.com/app?q=Pythonでソートアルゴリズムを教えて
+```
+
+**Control auto-send behavior:**
+```
+https://gemini.google.com/app?q=YOUR_QUESTION&send=false
+```
+
+- `send=true` or omit `send` - Automatically send the question (default)
+- `send=false` - Fill the textarea but don't send automatically
+
+**Practical use cases:**
+
+1. **Bookmarklets** - Create browser bookmarks for frequently asked questions:
+   ```javascript
+   javascript:(function(){
+     window.open('https://gemini.google.com/app?q=このコードをレビューして');
+   })();
+   ```
+
+2. **External tools integration** - Link from documentation, IDE, or other tools:
+   ```bash
+   # Open from terminal
+   open "https://gemini.google.com/app?q=Debug this error: $(cat error.log)"
+   ```
+
+3. **Workflow automation** - Integrate with Alfred, Raycast, or custom scripts:
+   ```bash
+   # Alfred workflow example
+   open "https://gemini.google.com/app?q=${query}"
+   ```
+
 ## Customizing Settings
+
+### Context Menu
+
+1. Right-click the extension icon in Chrome's toolbar
+2. Select "Options" from the menu
+3. Toggle "Enable right-click menu" checkbox
+4. Click "Save Settings" to apply changes
 
 ### Keyboard Shortcuts
 

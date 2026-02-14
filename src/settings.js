@@ -1,5 +1,10 @@
 // Settings management
 
+// Default context menu settings
+const DEFAULT_CONTEXT_MENU_SETTINGS = {
+  enabled: true
+};
+
 // Default keyboard shortcuts
 const DEFAULT_SHORTCUTS = {
   chat: {
@@ -26,6 +31,7 @@ const DEFAULT_SHORTCUTS = {
 
 // Current shortcuts (will be loaded from storage)
 let currentShortcuts = null;
+let contextMenuSettings = null;
 
 // Load shortcuts from Chrome storage
 async function loadShortcuts() {
@@ -39,6 +45,40 @@ async function loadShortcuts() {
       resolve(currentShortcuts);
     });
   });
+}
+
+// Load context menu settings
+async function loadContextMenuSettings() {
+  return new Promise((resolve) => {
+    chrome.storage.sync.get(['contextMenuSettings'], (result) => {
+      if (result.contextMenuSettings) {
+        contextMenuSettings = result.contextMenuSettings;
+      } else {
+        contextMenuSettings = JSON.parse(JSON.stringify(DEFAULT_CONTEXT_MENU_SETTINGS));
+      }
+      resolve(contextMenuSettings);
+    });
+  });
+}
+
+// Save context menu settings
+function saveContextMenuSettings(settings) {
+  return new Promise((resolve) => {
+    chrome.storage.sync.set({ contextMenuSettings: settings }, () => {
+      contextMenuSettings = settings;
+      // Notify background script to update menus
+      chrome.runtime.sendMessage({ 
+        type: 'updateContextMenu', 
+        enabled: settings.enabled 
+      });
+      resolve();
+    });
+  });
+}
+
+// Get context menu settings
+function getContextMenuSettings() {
+  return contextMenuSettings || DEFAULT_CONTEXT_MENU_SETTINGS;
 }
 
 // Save shortcuts to Chrome storage
