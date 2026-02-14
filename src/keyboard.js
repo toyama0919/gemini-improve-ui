@@ -5,7 +5,7 @@ function handleSearchPageKeydown(event) {
   // If autocomplete is visible, don't handle navigation keys
   if (typeof isAutocompleteVisible === 'function' && isAutocompleteVisible()) {
     // Let autocomplete handle these keys
-    if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || 
+    if (event.key === 'ArrowUp' || event.key === 'ArrowDown' ||
         event.key === 'Enter' || event.key === 'Tab' || event.key === 'Escape') {
       return false;
     }
@@ -81,7 +81,7 @@ function handleChatPageKeydown(event) {
   // If autocomplete is visible, don't handle navigation keys
   if (typeof isAutocompleteVisible === 'function' && isAutocompleteVisible()) {
     // Let autocomplete handle these keys
-    if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || 
+    if (event.key === 'ArrowUp' || event.key === 'ArrowDown' ||
         event.key === 'Enter' || event.key === 'Tab' || event.key === 'Escape') {
       return false;
     }
