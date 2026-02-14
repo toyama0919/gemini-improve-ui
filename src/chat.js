@@ -264,11 +264,20 @@ function setQueryFromUrl() {
   }, 200);
 }
 
-// Get and focus copy button
+// Get and focus copy button (only assistant's responses, not user's input)
 function focusCopyButton(direction) {
-  const copyButtons = Array.from(document.querySelectorAll('button[aria-label*="コピー"], button[aria-label*="Copy"], button.copy-button'));
+  const allCopyButtons = Array.from(document.querySelectorAll('button[aria-label*="コピー"], button[aria-label*="Copy"], button.copy-button'));
+  
+  // Filter out copy buttons that are inside user's input containers
+  // User's input is typically in model-response-text or similar containers with user/prompt attributes
+  const copyButtons = allCopyButtons.filter(btn => {
+    const container = btn.closest('[data-test-id*="user"]') || 
+                     btn.closest('[data-test-id*="prompt"]') ||
+                     btn.closest('[class*="user"]');
+    return !container; // Exclude buttons in user containers
+  });
 
-  // Look for copy button from last output
+  // Look for copy button from assistant output
   if (copyButtons.length === 0) return false;
 
   if (direction === 'up') {
@@ -282,9 +291,18 @@ function focusCopyButton(direction) {
   return true;
 }
 
-// Move between copy buttons
+// Move between copy buttons (only assistant's responses, not user's input)
 function moveBetweenCopyButtons(direction) {
-  const copyButtons = Array.from(document.querySelectorAll('button[aria-label*="コピー"], button[aria-label*="Copy"], button.copy-button'));
+  const allCopyButtons = Array.from(document.querySelectorAll('button[aria-label*="コピー"], button[aria-label*="Copy"], button.copy-button'));
+  
+  // Filter out copy buttons that are inside user's input containers
+  const copyButtons = allCopyButtons.filter(btn => {
+    const container = btn.closest('[data-test-id*="user"]') || 
+                     btn.closest('[data-test-id*="prompt"]') ||
+                     btn.closest('[class*="user"]');
+    return !container; // Exclude buttons in user containers
+  });
+  
   const currentIndex = copyButtons.findIndex(btn => btn === document.activeElement);
 
   if (currentIndex === -1) return false;

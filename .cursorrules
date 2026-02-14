@@ -1,16 +1,4 @@
-# Gemini Improve UI
-
-Chrome extension to improve Google Gemini Web UI with keyboard shortcuts and customizable chat width.
-
-## File Structure
-
-- `src/content.js` - Entry point, CSS injection
-- `src/keyboard.js` - Keyboard event handling
-- `src/chat.js` - Chat operations
-- `src/settings.js` - Settings management
-- `options.html/js` - Settings UI
-
-## Key Coding Rules
+# Key Coding Rules
 
 ### Selector Priority
 1. `data-test-id` (most stable)
