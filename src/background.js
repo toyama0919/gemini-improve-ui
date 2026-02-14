@@ -42,31 +42,40 @@ function getMenuItems(callback) {
   });
 }
 
-// Create context menus
+// Create context menus (with debouncing to prevent duplicates)
+let createMenusTimeout = null;
 function createContextMenus() {
-  chrome.contextMenus.removeAll(() => {
-    getMenuItems((menuItems) => {
-      if (menuItems.length === 0) return;
+  // Clear any pending creation
+  if (createMenusTimeout) {
+    clearTimeout(createMenusTimeout);
+  }
+  
+  // Debounce menu creation
+  createMenusTimeout = setTimeout(() => {
+    chrome.contextMenus.removeAll(() => {
+      getMenuItems((menuItems) => {
+        if (menuItems.length === 0) return;
 
-      // Create parent menu
-      chrome.contextMenus.create({
-        id: 'gemini-parent',
-        title: 'Gemini',
-        contexts: ['selection']
-      });
-
-      // Create menu items
-      menuItems.forEach(item => {
+        // Create parent menu
         chrome.contextMenus.create({
-          id: item.id,
-          title: item.title,
-          contexts: ['selection'],
-          type: 'normal',
-          parentId: 'gemini-parent'
+          id: 'gemini-parent',
+          title: 'Gemini',
+          contexts: ['selection']
+        });
+
+        // Create menu items
+        menuItems.forEach(item => {
+          chrome.contextMenus.create({
+            id: item.id,
+            title: item.title,
+            contexts: ['selection'],
+            type: 'normal',
+            parentId: 'gemini-parent'
+          });
         });
       });
     });
-  });
+  }, 100); // Wait 100ms to debounce multiple calls
 }
 
 // Remove context menus
