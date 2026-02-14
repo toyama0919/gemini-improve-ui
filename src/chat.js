@@ -204,6 +204,10 @@ function setQueryFromUrl() {
 
   if (!query) return;
 
+  // Check send parameter (default: true for backward compatibility)
+  const send = urlParams.get('send');
+  const shouldSend = send === null || send === 'true' || send === '1';
+
   let attempts = 0;
   const maxAttempts = 20;
 
@@ -238,20 +242,22 @@ function setQueryFromUrl() {
       // Dispatch input event to update Gemini UI
       textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
-      // Find and click send button
-      setTimeout(() => {
-        const sendButton = document.querySelector('button[aria-label*="送信"]') ||
-                          document.querySelector('button[aria-label*="Send"]') ||
-                          document.querySelector('button.send-button') ||
-                          Array.from(document.querySelectorAll('button')).find(btn =>
-                            btn.getAttribute('aria-label')?.includes('送信') ||
-                            btn.getAttribute('aria-label')?.includes('Send')
-                          );
+      // Find and click send button (only if send is enabled)
+      if (shouldSend) {
+        setTimeout(() => {
+          const sendButton = document.querySelector('button[aria-label*="送信"]') ||
+                            document.querySelector('button[aria-label*="Send"]') ||
+                            document.querySelector('button.send-button') ||
+                            Array.from(document.querySelectorAll('button')).find(btn =>
+                              btn.getAttribute('aria-label')?.includes('送信') ||
+                              btn.getAttribute('aria-label')?.includes('Send')
+                            );
 
-        if (sendButton && !sendButton.disabled) {
-          sendButton.click();
-        }
-      }, 500);
+          if (sendButton && !sendButton.disabled) {
+            sendButton.click();
+          }
+        }, 500);
+      }
     } else if (attempts >= maxAttempts) {
       clearInterval(interval);
     }
