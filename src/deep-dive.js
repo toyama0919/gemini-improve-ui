@@ -9,78 +9,100 @@ function addDeepDiveButtons() {
 
   // Process each response container
   responseContainers.forEach(responseContainer => {
-    // Find all sections, tables, blockquotes, and lists
     const targets = [];
     
-    // 1. Sections (heading + following content until next heading)
+    // 1. Check if there are any headings in this response
     const headings = responseContainer.querySelectorAll('h1[data-path-to-node], h2[data-path-to-node], h3[data-path-to-node], h4[data-path-to-node], h5[data-path-to-node], h6[data-path-to-node]');
-    headings.forEach(heading => {
-      // Skip if already has deep dive button
-      if (heading.querySelector('.deep-dive-button-inline')) return;
+    const hasHeadings = headings.length > 0;
+    
+    if (hasHeadings) {
+      // If headings exist, only process sections and tables
+      // (blockquotes and lists are covered by section buttons)
       
-      targets.push({
-        type: 'section',
-        element: heading,
-        getContent: () => getSectionContent(heading)
+      // Process sections (heading + following content until next heading)
+      headings.forEach(heading => {
+        // Skip if already has deep dive button
+        if (heading.querySelector('.deep-dive-button-inline')) return;
+        
+        targets.push({
+          type: 'section',
+          element: heading,
+          getContent: () => getSectionContent(heading)
+        });
       });
-    });
 
-    // 2. Tables
-    const tables = responseContainer.querySelectorAll('table[data-path-to-node]');
-    tables.forEach(table => {
-      const wrapper = table.closest('.table-block-component');
-      if (wrapper && !wrapper.querySelector('.deep-dive-button-inline')) {
-        targets.push({
-          type: 'table',
-          element: wrapper,
-          getContent: () => getTableContent(table)
-        });
-      }
-    });
-
-    // 3. Blockquotes
-    const blockquotes = responseContainer.querySelectorAll('blockquote[data-path-to-node]');
-    blockquotes.forEach(blockquote => {
-      if (!blockquote.querySelector('.deep-dive-button-inline')) {
-        targets.push({
-          type: 'blockquote',
-          element: blockquote,
-          getContent: () => blockquote.textContent.trim()
-        });
-      }
-    });
-
-    // 4. Lists (ol/ul) - only top-level lists, not nested ones
-    const lists = responseContainer.querySelectorAll('ol[data-path-to-node], ul[data-path-to-node]');
-    lists.forEach(list => {
-      // Skip if already has deep dive button
-      if (list.querySelector('.deep-dive-button-inline')) {
-        return;
-      }
-      
-      // Check if this list is nested inside another list
-      let parent = list.parentElement;
-      let isNested = false;
-      
-      while (parent && parent !== responseContainer) {
-        if ((parent.tagName === 'OL' || parent.tagName === 'UL') && parent.hasAttribute('data-path-to-node')) {
-          isNested = true;
-          break;
+      // Process tables
+      const tables = responseContainer.querySelectorAll('table[data-path-to-node]');
+      tables.forEach(table => {
+        const wrapper = table.closest('.table-block-component');
+        if (wrapper && !wrapper.querySelector('.deep-dive-button-inline')) {
+          targets.push({
+            type: 'table',
+            element: wrapper,
+            getContent: () => getTableContent(table)
+          });
         }
-        parent = parent.parentElement;
-      }
-      
-      // Skip nested lists
-      if (isNested) {
-        return;
-      }
-      
-      targets.push({
-        type: 'list',
-        element: list,
-        getContent: () => getListContent(list)
       });
-    });
+    } else {
+      // If no headings, process tables, blockquotes, and lists individually
+      
+      // Process tables
+      const tables = responseContainer.querySelectorAll('table[data-path-to-node]');
+      tables.forEach(table => {
+        const wrapper = table.closest('.table-block-component');
+        if (wrapper && !wrapper.querySelector('.deep-dive-button-inline')) {
+          targets.push({
+            type: 'table',
+            element: wrapper,
+            getContent: () => getTableContent(table)
+          });
+        }
+      });
+
+      // Process blockquotes
+      const blockquotes = responseContainer.querySelectorAll('blockquote[data-path-to-node]');
+      blockquotes.forEach(blockquote => {
+        if (!blockquote.querySelector('.deep-dive-button-inline')) {
+          targets.push({
+            type: 'blockquote',
+            element: blockquote,
+            getContent: () => blockquote.textContent.trim()
+          });
+        }
+      });
+
+      // Process lists (only top-level lists, not nested ones)
+      const lists = responseContainer.querySelectorAll('ol[data-path-to-node], ul[data-path-to-node]');
+      lists.forEach(list => {
+        // Skip if already has deep dive button
+        if (list.querySelector('.deep-dive-button-inline')) {
+          return;
+        }
+        
+        // Check if this list is nested inside another list
+        let parent = list.parentElement;
+        let isNested = false;
+        
+        while (parent && parent !== responseContainer) {
+          if ((parent.tagName === 'OL' || parent.tagName === 'UL') && parent.hasAttribute('data-path-to-node')) {
+            isNested = true;
+            break;
+          }
+          parent = parent.parentElement;
+        }
+        
+        // Skip nested lists
+        if (isNested) {
+          return;
+        }
+        
+        targets.push({
+          type: 'list',
+          element: list,
+          getContent: () => getListContent(list)
+        });
+      });
+    }
 
     // Add deep dive button to each target
     targets.forEach(target => {
