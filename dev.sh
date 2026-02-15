@@ -6,6 +6,7 @@ CHROME_DEBUG_PORT=9222
 CHROME_USER_DIR="$(pwd)/.chrome-devtools-mcp"
 CHROME_BINARY="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 PID_FILE="${CHROME_USER_DIR}/.chrome-debug.pid"
+TEST_CHAT_URL="https://gemini.google.com/app/6cbdc99490e24d7e"
 
 # Colors
 GREEN='\033[0;32m'
@@ -31,14 +32,34 @@ check_debug_chrome() {
 
 start_chrome() {
   local FOREGROUND=false
-  if [ "$1" == "--fg" ] || [ "$1" == "--foreground" ]; then
-    FOREGROUND=true
-  fi
+  local OPEN_TEST_CHAT=false
+  
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      --fg|--foreground)
+        FOREGROUND=true
+        shift
+        ;;
+      --test)
+        OPEN_TEST_CHAT=true
+        shift
+        ;;
+      *)
+        shift
+        ;;
+    esac
+  done
 
   echo -e "${YELLOW}Checking if debug Chrome is already running...${NC}"
 
   if check_debug_chrome; then
     echo -e "${GREEN}Debug Chrome is already running on port ${CHROME_DEBUG_PORT}${NC}"
+    
+    if [ "$OPEN_TEST_CHAT" = true ]; then
+      echo -e "${YELLOW}Opening test chat URL...${NC}"
+      open "${TEST_CHAT_URL}"
+    fi
+    
     exit 0
   fi
 
@@ -47,6 +68,16 @@ start_chrome() {
   # Create user data directory if it doesn't exist
   mkdir -p "${CHROME_USER_DIR}"
 
+  # Build Chrome command arguments
+  local CHROME_ARGS=(
+    "--remote-debugging-port=${CHROME_DEBUG_PORT}"
+    "--user-data-dir=${CHROME_USER_DIR}"
+  )
+  
+  if [ "$OPEN_TEST_CHAT" = true ]; then
+    CHROME_ARGS+=("${TEST_CHAT_URL}")
+  fi
+
   if [ "$FOREGROUND" = true ]; then
     # Foreground mode - trap Ctrl+C for cleanup
     trap cleanup INT TERM
@@ -54,9 +85,7 @@ start_chrome() {
     echo -e "${GREEN}Starting in foreground mode (press Ctrl+C to stop)${NC}"
 
     # Start Chrome in foreground
-    "${CHROME_BINARY}" \
-      --remote-debugging-port=${CHROME_DEBUG_PORT} \
-      --user-data-dir="${CHROME_USER_DIR}" &
+    "${CHROME_BINARY}" "${CHROME_ARGS[@]}" &
 
     CHROME_PID=$!
     echo ${CHROME_PID} > "${PID_FILE}"
@@ -67,6 +96,9 @@ start_chrome() {
     if check_debug_chrome; then
       echo -e "${GREEN}Chrome started successfully (PID: ${CHROME_PID})${NC}"
       echo -e "${GREEN}Remote debugging available at http://localhost:${CHROME_DEBUG_PORT}${NC}"
+      if [ "$OPEN_TEST_CHAT" = true ]; then
+        echo -e "${GREEN}Test chat opened: ${TEST_CHAT_URL}${NC}"
+      fi
       echo -e "${YELLOW}Press Ctrl+C to stop debug Chrome${NC}"
 
       # Wait for Chrome process to exit or Ctrl+C
@@ -78,10 +110,7 @@ start_chrome() {
     fi
   else
     # Background mode (default)
-    "${CHROME_BINARY}" \
-      --remote-debugging-port=${CHROME_DEBUG_PORT} \
-      --user-data-dir="${CHROME_USER_DIR}" \
-      > /dev/null 2>&1 &
+    "${CHROME_BINARY}" "${CHROME_ARGS[@]}" > /dev/null 2>&1 &
 
     CHROME_PID=$!
     echo ${CHROME_PID} > "${PID_FILE}"
@@ -92,6 +121,9 @@ start_chrome() {
     if check_debug_chrome; then
       echo -e "${GREEN}Chrome started successfully (PID: ${CHROME_PID})${NC}"
       echo -e "${GREEN}Remote debugging available at http://localhost:${CHROME_DEBUG_PORT}${NC}"
+      if [ "$OPEN_TEST_CHAT" = true ]; then
+        echo -e "${GREEN}Test chat opened: ${TEST_CHAT_URL}${NC}"
+      fi
       echo -e "${YELLOW}Run './dev.sh stop' to stop debug Chrome${NC}"
     else
       echo -e "${RED}Failed to start Chrome${NC}"
@@ -129,7 +161,7 @@ stop_chrome() {
 restart_chrome() {
   stop_chrome
   sleep 1
-  start_chrome
+  start_chrome "$@"
 }
 
 check_status() {
@@ -169,15 +201,18 @@ case "$1" in
     echo "Usage: $0 {start|stop|restart|status}"
     echo ""
     echo "Commands:"
-    echo "  start [--fg]  - Start Chrome in remote debugging mode"
-    echo "                  --fg: Run in foreground (auto-stops on Ctrl+C)"
-    echo "  stop          - Stop debug Chrome (leaves normal Chrome running)"
-    echo "  restart       - Restart debug Chrome"
-    echo "  status        - Check if debug Chrome is running"
+    echo "  start [--fg] [--test]  - Start Chrome in remote debugging mode"
+    echo "                           --fg: Run in foreground (auto-stops on Ctrl+C)"
+    echo "                           --test: Open test chat URL"
+    echo "  stop                   - Stop debug Chrome (leaves normal Chrome running)"
+    echo "  restart [--test]       - Restart debug Chrome"
+    echo "  status                 - Check if debug Chrome is running"
     echo ""
     echo "Examples:"
-    echo "  ./dev.sh start           # Start in background"
-    echo "  ./dev.sh start --fg      # Start in foreground (auto-cleanup)"
+    echo "  ./dev.sh start                  # Start in background"
+    echo "  ./dev.sh start --fg             # Start in foreground (auto-cleanup)"
+    echo "  ./dev.sh start --test           # Start and open test chat"
+    echo "  ./dev.sh restart --test         # Restart and open test chat"
     exit 1
     ;;
 esac
