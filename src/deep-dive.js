@@ -9,7 +9,7 @@ function addDeepDiveButtons() {
 
   // Process each response container
   responseContainers.forEach(responseContainer => {
-    // Find all sections, tables, and blockquotes
+    // Find all sections, tables, blockquotes, and lists
     const targets = [];
     
     // 1. Sections (heading + following content until next heading)
@@ -48,6 +48,21 @@ function addDeepDiveButtons() {
           getContent: () => blockquote.textContent.trim()
         });
       }
+    });
+
+    // 4. Lists (ol/ul)
+    const lists = responseContainer.querySelectorAll('ol[data-path-to-node], ul[data-path-to-node]');
+    lists.forEach(list => {
+      // Skip if already has deep dive button
+      if (list.querySelector('.deep-dive-button-inline')) {
+        return;
+      }
+      
+      targets.push({
+        type: 'list',
+        element: list,
+        getContent: () => getListContent(list)
+      });
     });
 
     // Add deep dive button to each target
@@ -93,6 +108,11 @@ function getTableContent(table) {
   });
   
   return content.trim();
+}
+
+// Get list content
+function getListContent(list) {
+  return list.textContent.trim();
 }
 
 // Add deep dive button to an element
@@ -157,6 +177,13 @@ function addDeepDiveButton(target) {
     button.style.position = 'absolute';
     button.style.top = '8px';
     button.style.right = '8px';
+    target.element.appendChild(button);
+  } else if (target.type === 'list') {
+    // Add button at the top right of list
+    target.element.style.position = 'relative';
+    button.style.position = 'absolute';
+    button.style.top = '0';
+    button.style.right = '0';
     target.element.appendChild(button);
   }
 }

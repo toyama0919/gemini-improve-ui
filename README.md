@@ -76,6 +76,7 @@ All actions open a new Gemini tab with the query pre-filled and automatically se
 Explore Gemini's responses in more detail with inline deep dive buttons. Buttons appear on:
 
 - **Section headings** - Dive deeper into specific sections
+- **Lists (ol/ul)** - Ask follow-up questions about list items
 - **Tables** - Ask follow-up questions about data
 - **Blockquotes** - Explore quoted content
 
