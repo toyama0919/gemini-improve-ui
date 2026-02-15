@@ -54,6 +54,32 @@ Configured in `.cursor/mcp.json`:
 
 ## Debugging Workflow
 
+### Best Practices
+
+**Prefer text-based debugging over screenshots:**
+- Use `take_snapshot()` to get DOM structure as text
+- Use `evaluate_script()` to check element existence, counts, and properties
+- Only use `take_screenshot()` when visual verification is absolutely necessary
+
+**Example: Check if buttons are added**
+```javascript
+// Good: Text-based verification
+evaluate_script(() => {
+  const buttons = document.querySelectorAll('.deep-dive-button-inline');
+  return {
+    count: buttons.length,
+    firstButtonHTML: buttons[0]?.outerHTML.substring(0, 200),
+    positions: Array.from(buttons).map(b => ({
+      parent: b.parentElement.tagName,
+      position: b.style.position
+    }))
+  };
+});
+
+// Avoid: Taking screenshots for every check
+// take_screenshot() - only when visual layout verification is needed
+```
+
 ### Testing Extensions
 
 1. **Load extension in Debug Chrome**
