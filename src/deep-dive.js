@@ -50,11 +50,28 @@ function addDeepDiveButtons() {
       }
     });
 
-    // 4. Lists (ol/ul)
+    // 4. Lists (ol/ul) - only top-level lists, not nested ones
     const lists = responseContainer.querySelectorAll('ol[data-path-to-node], ul[data-path-to-node]');
     lists.forEach(list => {
       // Skip if already has deep dive button
       if (list.querySelector('.deep-dive-button-inline')) {
+        return;
+      }
+      
+      // Check if this list is nested inside another list
+      let parent = list.parentElement;
+      let isNested = false;
+      
+      while (parent && parent !== responseContainer) {
+        if ((parent.tagName === 'OL' || parent.tagName === 'UL') && parent.hasAttribute('data-path-to-node')) {
+          isNested = true;
+          break;
+        }
+        parent = parent.parentElement;
+      }
+      
+      // Skip nested lists
+      if (isNested) {
         return;
       }
       
