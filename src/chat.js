@@ -264,70 +264,78 @@ function setQueryFromUrl() {
   }, 200);
 }
 
-// Get and focus copy button (only assistant's responses, not user's input)
-function focusCopyButton(direction) {
-  const allCopyButtons = Array.from(document.querySelectorAll('button[aria-label*="コピー"], button[aria-label*="Copy"], button.copy-button'));
-  
-  // Filter out copy buttons that are inside user's input containers
-  // User's input is typically in model-response-text or similar containers with user/prompt attributes
-  const copyButtons = allCopyButtons.filter(btn => {
-    const container = btn.closest('[data-test-id*="user"]') || 
-                     btn.closest('[data-test-id*="prompt"]') ||
-                     btn.closest('[class*="user"]');
-    return !container; // Exclude buttons in user containers
-  });
+// Get and focus action button (copy/deep-dive) (only assistant's responses, not user's input)
+function focusActionButton(direction) {
+  const actionButtons = getAllActionButtons();
 
-  // Look for copy button from assistant output
-  if (copyButtons.length === 0) return false;
+  // Look for action buttons from assistant output
+  if (actionButtons.length === 0) return false;
 
   if (direction === 'up') {
-    // Up key: focus on last copy button
-    copyButtons[copyButtons.length - 1].focus();
+    // Up key: focus on last action button
+    actionButtons[actionButtons.length - 1].focus();
   } else {
-    // Down key: focus on first copy button
-    copyButtons[0].focus();
+    // Down key: focus on first action button
+    actionButtons[0].focus();
   }
 
   return true;
 }
 
-// Move between copy buttons (only assistant's responses, not user's input)
-function moveBetweenCopyButtons(direction) {
-  const allCopyButtons = Array.from(document.querySelectorAll('button[aria-label*="コピー"], button[aria-label*="Copy"], button.copy-button'));
+// Move between action buttons (copy/deep-dive) (only assistant's responses, not user's input)
+function moveBetweenActionButtons(direction) {
+  const actionButtons = getAllActionButtons();
   
-  // Filter out copy buttons that are inside user's input containers
-  const copyButtons = allCopyButtons.filter(btn => {
+  const currentIndex = actionButtons.findIndex(btn => btn === document.activeElement);
+
+  if (currentIndex === -1) return false;
+
+  if (direction === 'up') {
+    if (currentIndex > 0) {
+      // Focus on previous action button
+      actionButtons[currentIndex - 1].focus();
+      // Remember position
+      if (typeof window.rememberActionButtonPosition === 'function') {
+        window.rememberActionButtonPosition(currentIndex - 1);
+      }
+      return true;
+    } else {
+      // First action button, so return to textarea
+      focusTextarea();
+      return true;
+    }
+  } else {
+    if (currentIndex < actionButtons.length - 1) {
+      // Focus on next action button
+      actionButtons[currentIndex + 1].focus();
+      // Remember position
+      if (typeof window.rememberActionButtonPosition === 'function') {
+        window.rememberActionButtonPosition(currentIndex + 1);
+      }
+      return true;
+    } else {
+      // Last action button, so return to textarea
+      focusTextarea();
+      return true;
+    }
+  }
+}
+
+// Get all action buttons (copy + deep-dive) excluding user's input containers
+function getAllActionButtons() {
+  const allButtons = Array.from(document.querySelectorAll(
+    'button[aria-label*="コピー"], button[aria-label*="Copy"], button.copy-button, button.deep-dive-button-inline, button[data-action="deep-dive"]'
+  ));
+  
+  // Filter out buttons that are inside user's input containers
+  const actionButtons = allButtons.filter(btn => {
     const container = btn.closest('[data-test-id*="user"]') || 
                      btn.closest('[data-test-id*="prompt"]') ||
                      btn.closest('[class*="user"]');
     return !container; // Exclude buttons in user containers
   });
   
-  const currentIndex = copyButtons.findIndex(btn => btn === document.activeElement);
-
-  if (currentIndex === -1) return false;
-
-  if (direction === 'up') {
-    if (currentIndex > 0) {
-      // Focus on previous copy button
-      copyButtons[currentIndex - 1].focus();
-      return true;
-    } else {
-      // First copy button, so return to textarea
-      focusTextarea();
-      return true;
-    }
-  } else {
-    if (currentIndex < copyButtons.length - 1) {
-      // Focus on next copy button
-      copyButtons[currentIndex + 1].focus();
-      return true;
-    } else {
-      // Last copy button, so return to textarea
-      focusTextarea();
-      return true;
-    }
-  }
+  return actionButtons;
 }
 
 // Toggle pin/unpin current chat
@@ -393,4 +401,23 @@ function initializeChatPage() {
   setTimeout(() => {
     initializeAutocomplete();
   }, 1500);
+  
+  // Monitor send button clicks to reset action button position
+  const observer = new MutationObserver(() => {
+    // Look for streaming indicator (aria-busy="true")
+    const isStreaming = document.querySelector('[aria-busy="true"]');
+    
+    // When streaming starts, reset the position
+    if (isStreaming) {
+      if (typeof window.rememberActionButtonPosition === 'function') {
+        window.rememberActionButtonPosition(-1);
+      }
+    }
+  });
+  
+  observer.observe(document.body, {
+    attributes: true,
+    attributeFilter: ['aria-busy'],
+    subtree: true
+  });
 }

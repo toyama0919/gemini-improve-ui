@@ -75,6 +75,11 @@ function initialize() {
     if (currentUrl !== lastUrl) {
       lastUrl = currentUrl;
 
+      // Reset action button position on URL change
+      if (typeof window.rememberActionButtonPosition === 'function') {
+        window.rememberActionButtonPosition(-1);
+      }
+
       // Wait for new page to load
       setTimeout(() => {
         if (typeof initializeAutocomplete === 'function') {
@@ -98,6 +103,10 @@ function initialize() {
     }
   } else {
     initializeChatPage();
+    // Initialize deep dive functionality
+    if (typeof initializeDeepDive === 'function') {
+      initializeDeepDive();
+    }
   }
 
   // Listen for storage changes to update width dynamically

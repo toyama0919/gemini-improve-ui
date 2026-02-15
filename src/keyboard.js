@@ -1,5 +1,18 @@
 // Keyboard event handlers
 
+// Remember last focused action button index
+let lastFocusedActionButtonIndex = -1;
+
+// Reset last focused button index (called on new question or reload)
+function resetLastFocusedActionButton() {
+  lastFocusedActionButtonIndex = -1;
+}
+
+// Remember action button position (called from chat.js)
+window.rememberActionButtonPosition = function(index) {
+  lastFocusedActionButtonIndex = index;
+};
+
 // Handle search page keyboard events
 function handleSearchPageKeydown(event) {
   // If autocomplete is visible, don't handle navigation keys
@@ -131,20 +144,55 @@ function handleChatPageKeydown(event) {
     return true;
   }
 
-  // End: Toggle between textarea ⇔ history selection mode
+  // End: Cycle through textarea → sidebar → action buttons → textarea
   if (isShortcut(event, 'chat.toggleHistoryMode')) {
     event.preventDefault();
 
+    // Check if there are any action buttons (responses exist)
+    const actionButtons = getAllActionButtons();
+    const hasResponses = actionButtons.length > 0;
+    
     if (isHistorySelectionMode()) {
-      // If in history selection mode, focus on input field
+      // From sidebar: go to action buttons if responses exist, otherwise back to textarea
       exitHistorySelectionMode();
-      focusTextarea();
+      
+      if (hasResponses) {
+        // Use remembered position, or default to last button
+        let targetIndex = lastFocusedActionButtonIndex;
+        if (targetIndex < 0 || targetIndex >= actionButtons.length) {
+          targetIndex = actionButtons.length - 1;
+        }
+        actionButtons[targetIndex].focus();
+      } else {
+        // No responses, go back to textarea
+        focusTextarea();
+      }
     } else if (isInInput) {
-      // If in textarea, enter history selection mode
+      // From textarea: go to sidebar (history selection mode)
       enterHistorySelectionMode();
     } else {
-      // Otherwise, first focus on textarea
-      focusTextarea();
+      // From action button or other: check if we're on an action button
+      const focusedElement = document.activeElement;
+      const isActionButton = focusedElement &&
+                            (focusedElement.getAttribute('aria-label')?.includes('コピー') ||
+                             focusedElement.getAttribute('aria-label')?.includes('Copy') ||
+                             focusedElement.classList?.contains('copy-button') ||
+                             focusedElement.classList?.contains('deep-dive-button-inline') ||
+                             focusedElement.getAttribute('data-action') === 'deep-dive');
+      
+      if (isActionButton) {
+        // Remember current button position before leaving
+        const currentIndex = actionButtons.findIndex(btn => btn === focusedElement);
+        if (currentIndex !== -1) {
+          lastFocusedActionButtonIndex = currentIndex;
+        }
+        
+        // From action button: go back to textarea
+        focusTextarea();
+      } else {
+        // Otherwise: go to textarea
+        focusTextarea();
+      }
     }
     return true;
   }
@@ -187,7 +235,7 @@ function handleChatPageKeydown(event) {
     }
   }
 
-  // Focus on copy button when up/down keys are pressed with empty textarea
+  // Focus on action button (copy/deep-dive) when up/down keys are pressed with empty textarea
   if (!isHistorySelectionMode() && isInInput &&
       (isShortcut(event, 'chat.historyUp') || isShortcut(event, 'chat.historyDown'))) {
     const textarea = document.querySelector('div[contenteditable="true"][role="textbox"]');
@@ -195,28 +243,30 @@ function handleChatPageKeydown(event) {
     if (textarea && textarea.textContent.trim() === '') {
       event.preventDefault();
       const direction = isShortcut(event, 'chat.historyUp') ? 'up' : 'down';
-      focusCopyButton(direction);
+      focusActionButton(direction);
       return true;
     }
   }
 
   // Arrow key operations outside history selection mode and when not in input field
   if (!isHistorySelectionMode() && !isInInput) {
-    // Processing when copy button has focus
+    // Processing when action button (copy/deep-dive) has focus
     const focusedElement = document.activeElement;
-    const isCopyButton = focusedElement &&
-                        (focusedElement.getAttribute('aria-label')?.includes('コピー') ||
-                         focusedElement.getAttribute('aria-label')?.includes('Copy') ||
-                         focusedElement.classList?.contains('copy-button'));
+    const isActionButton = focusedElement &&
+                          (focusedElement.getAttribute('aria-label')?.includes('コピー') ||
+                           focusedElement.getAttribute('aria-label')?.includes('Copy') ||
+                           focusedElement.classList?.contains('copy-button') ||
+                           focusedElement.classList?.contains('deep-dive-button-inline') ||
+                           focusedElement.getAttribute('data-action') === 'deep-dive');
 
-    if (isCopyButton) {
+    if (isActionButton) {
       if (isShortcut(event, 'chat.historyUp') || isShortcut(event, 'chat.historyDown')) {
         event.preventDefault();
         const direction = isShortcut(event, 'chat.historyUp') ? 'up' : 'down';
-        moveBetweenCopyButtons(direction);
+        moveBetweenActionButtons(direction);
         return true;
       } else if (isShortcut(event, 'chat.historyOpen')) {
-        // Explicitly click copy button with Enter key
+        // Explicitly click action button with Enter key
         event.preventDefault();
         focusedElement.click();
         return true;

@@ -12,6 +12,7 @@ A Chrome extension that enhances Google Gemini Web UI with keyboard shortcuts, c
 - Sidebar element hiding (Gems list, My Stuff section)
 - Chat pin/unpin functionality
 - Quick access to copy buttons
+- **Deep dive into responses** - Explore topics in detail with inline buttons
 - Autocomplete for faster input
 - DOM structure analysis for AI developers
 - **Context menu integration** - Right-click on selected text to send to Gemini
@@ -26,7 +27,7 @@ All keyboard shortcuts can be customized via the extension's options page. The d
 - `Insert`: Navigate to search screen
 - `Delete`: Toggle sidebar open/close
 - `Home`: Create new chat
-- `End`: Toggle between textarea ⇔ history selection mode
+- `End`: Cycle through textarea → sidebar → action buttons (if responses exist) → textarea
 - `PageUp` / `PageDown`: Scroll chat area
 - `↑` / `↓`: Navigate through history (in history selection mode)
 - `Enter`: Open selected history
@@ -39,11 +40,11 @@ All keyboard shortcuts can be customized via the extension's options page. The d
 - `Enter`: Open selected search result
 - `PageUp` / `PageDown`: Scroll page
 
-### Copy Buttons
+### Copy Buttons & Deep Dive
 
-- `↑` / `↓` (when textarea is empty): Focus on copy button
-- `↑` / `↓` (when copy button is focused): Move to other copy buttons
-- `Enter`: Click focused copy button
+- `↑` / `↓` (when textarea is empty): Focus on action button (copy/deep-dive)
+- `↑` / `↓` (when action button is focused): Move to other action buttons
+- `Enter`: Click focused action button
 
 ### Autocomplete
 
@@ -69,6 +70,28 @@ Select any text on a webpage, right-click, and choose from Gemini actions:
 - **コードレビュー** - Review code for improvements
 
 All actions open a new Gemini tab with the query pre-filled and automatically sent.
+
+### Deep Dive into Responses
+
+Explore Gemini's responses in more detail with inline deep dive buttons. Buttons appear on:
+
+- **Section headings** - Dive deeper into specific sections
+- **Tables** - Ask follow-up questions about data
+- **Blockquotes** - Explore quoted content
+
+**How to use:**
+
+1. Click the 🔍 button next to any section, table, or blockquote
+2. **Enter or normal click:** Quotes the content + adds "これについて詳しく" and auto-sends
+3. **Ctrl+Enter or Ctrl+click:** Only quotes the content, you add your own prompt
+
+**Keyboard navigation:**
+
+Deep dive buttons are included in the action button navigation:
+- Press `End` key to cycle: textarea → sidebar → action buttons → textarea
+- Press `↑` / `↓` with empty textarea to focus on buttons
+- Use `↑` / `↓` to move between copy and deep dive buttons
+- Press `Enter` to click the focused button
 
 ### URL Query Parameter
 

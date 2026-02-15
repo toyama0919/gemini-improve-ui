@@ -26,6 +26,7 @@
         "src/autocomplete.js",
         "src/chat.js",
         "src/dom-analyzer.js",
+        "src/deep-dive.js",
         "src/keyboard.js",
         "src/content.js"
       ],
