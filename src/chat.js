@@ -285,7 +285,7 @@ function focusActionButton(direction) {
 // Move between action buttons (copy/deep-dive) (only assistant's responses, not user's input)
 function moveBetweenActionButtons(direction) {
   const actionButtons = getAllActionButtons();
-  
+
   const currentIndex = actionButtons.findIndex(btn => btn === document.activeElement);
 
   if (currentIndex === -1) return false;
@@ -326,15 +326,15 @@ function getAllActionButtons() {
   const allButtons = Array.from(document.querySelectorAll(
     'button[aria-label*="コピー"], button[aria-label*="Copy"], button.copy-button, button.deep-dive-button-inline, button[data-action="deep-dive"]'
   ));
-  
+
   // Filter out buttons that are inside user's input containers
   const actionButtons = allButtons.filter(btn => {
-    const container = btn.closest('[data-test-id*="user"]') || 
+    const container = btn.closest('[data-test-id*="user"]') ||
                      btn.closest('[data-test-id*="prompt"]') ||
                      btn.closest('[class*="user"]');
     return !container; // Exclude buttons in user containers
   });
-  
+
   return actionButtons;
 }
 
@@ -401,12 +401,12 @@ function initializeChatPage() {
   setTimeout(() => {
     initializeAutocomplete();
   }, 1500);
-  
+
   // Monitor send button clicks to reset action button position
   const observer = new MutationObserver(() => {
     // Look for streaming indicator (aria-busy="true")
     const isStreaming = document.querySelector('[aria-busy="true"]');
-    
+
     // When streaming starts, reset the position
     if (isStreaming) {
       if (typeof window.rememberActionButtonPosition === 'function') {
@@ -414,7 +414,7 @@ function initializeChatPage() {
       }
     }
   });
-  
+
   observer.observe(document.body, {
     attributes: true,
     attributeFilter: ['aria-busy'],
