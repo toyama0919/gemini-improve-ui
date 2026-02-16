@@ -40,11 +40,13 @@ All keyboard shortcuts can be customized via the extension's options page. The d
 - `Enter`: Open selected search result
 - `PageUp` / `PageDown`: Scroll page
 
-### Copy Buttons & Deep Dive
+### Deep Dive Buttons
 
-- `↑` / `↓` (when textarea is empty): Focus on action button (copy/deep-dive)
-- `↑` / `↓` (when action button is focused): Move to other action buttons
-- `Enter`: Click focused action button
+- `↑` / `↓` (when textarea is empty): Focus on deep dive button
+- `↑` / `↓` (when deep dive button is focused): Move to other deep dive buttons
+- `→` (when deep dive button is focused): Expand to show child buttons
+- `←` (when deep dive button is focused): Collapse child buttons
+- `Enter`: Click focused button
 
 ### Autocomplete
 
@@ -82,16 +84,25 @@ Explore Gemini's responses in more detail with inline deep dive buttons. Buttons
 
 **How to use:**
 
-1. Click the 🔍 button next to any section, table, or blockquote
+1. Click the " (quote) button next to any section, table, or blockquote
 2. **Enter or normal click:** Quotes the content + adds "これについて詳しく" and auto-sends
 3. **Ctrl+Enter or Ctrl+click:** Only quotes the content, you add your own prompt
 
+**Fine-grained selection:**
+
+For sections and lists, you can expand to select individual paragraphs or list items:
+
+1. Click the **+** button next to the deep dive button
+2. Or press `→` when deep dive button is focused to expand
+3. Select specific paragraphs or list items with their own " buttons
+4. Click the **-** button or press `←` to collapse back
+
 **Keyboard navigation:**
 
-Deep dive buttons are included in the action button navigation:
 - Press `End` key to cycle: textarea → sidebar → action buttons → textarea
 - Press `↑` / `↓` with empty textarea to focus on buttons
-- Use `↑` / `↓` to move between copy and deep dive buttons
+- Use `↑` / `↓` to move between deep dive buttons
+- Use `→` to expand, `←` to collapse (shows +/- indicator)
 - Press `Enter` to click the focused button
 
 ### URL Query Parameter

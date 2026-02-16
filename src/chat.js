@@ -323,8 +323,9 @@ function moveBetweenActionButtons(direction) {
 
 // Get all action buttons (copy + deep-dive) excluding user's input containers
 function getAllActionButtons() {
+  // Get only deep-dive buttons (not expand buttons which have tabindex=-1)
   const allButtons = Array.from(document.querySelectorAll(
-    'button[aria-label*="コピー"], button[aria-label*="Copy"], button.copy-button, button.deep-dive-button-inline, button[data-action="deep-dive"]'
+    'button.deep-dive-button-inline, button[data-action="deep-dive"]'
   ));
 
   // Filter out buttons that are inside user's input containers

@@ -174,10 +174,7 @@ function handleChatPageKeydown(event) {
       // From action button or other: check if we're on an action button
       const focusedElement = document.activeElement;
       const isActionButton = focusedElement &&
-                            (focusedElement.getAttribute('aria-label')?.includes('コピー') ||
-                             focusedElement.getAttribute('aria-label')?.includes('Copy') ||
-                             focusedElement.classList?.contains('copy-button') ||
-                             focusedElement.classList?.contains('deep-dive-button-inline') ||
+                            (focusedElement.classList?.contains('deep-dive-button-inline') ||
                              focusedElement.getAttribute('data-action') === 'deep-dive');
       
       if (isActionButton) {
@@ -250,23 +247,46 @@ function handleChatPageKeydown(event) {
 
   // Arrow key operations outside history selection mode and when not in input field
   if (!isHistorySelectionMode() && !isInInput) {
-    // Processing when action button (copy/deep-dive) has focus
+    // Processing when action button (deep-dive) has focus
     const focusedElement = document.activeElement;
     const isActionButton = focusedElement &&
-                          (focusedElement.getAttribute('aria-label')?.includes('コピー') ||
-                           focusedElement.getAttribute('aria-label')?.includes('Copy') ||
-                           focusedElement.classList?.contains('copy-button') ||
-                           focusedElement.classList?.contains('deep-dive-button-inline') ||
+                          (focusedElement.classList?.contains('deep-dive-button-inline') ||
                            focusedElement.getAttribute('data-action') === 'deep-dive');
 
+    // Only process keys when deep-dive button is focused
+    // This ensures no conflict with textarea or sidebar navigation
     if (isActionButton) {
+      // Up/Down: Move between action buttons
       if (isShortcut(event, 'chat.historyUp') || isShortcut(event, 'chat.historyDown')) {
         event.preventDefault();
         const direction = isShortcut(event, 'chat.historyUp') ? 'up' : 'down';
         moveBetweenActionButtons(direction);
         return true;
-      } else if (isShortcut(event, 'chat.historyOpen')) {
-        // Explicitly click action button with Enter key
+      }
+      
+      // Left/Right: Expand/collapse if expand button exists
+      if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+        event.preventDefault();
+        
+        const expandButton = focusedElement._expandButton;
+        const target = focusedElement._deepDiveTarget;
+        
+        if (expandButton && target) {
+          const isExpanded = expandButton.getAttribute('data-action') === 'collapse';
+          
+          if (event.key === 'ArrowRight' && !isExpanded) {
+            // Right: Expand
+            expandButton.click();
+          } else if (event.key === 'ArrowLeft' && isExpanded) {
+            // Left: Collapse
+            expandButton.click();
+          }
+        }
+        return true;
+      }
+      
+      // Enter: Click the focused button
+      if (isShortcut(event, 'chat.historyOpen')) {
         event.preventDefault();
         focusedElement.click();
         return true;

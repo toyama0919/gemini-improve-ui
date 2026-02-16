@@ -162,22 +162,19 @@ function addDeepDiveButton(target) {
   button.setAttribute('data-action', 'deep-dive');
   button.title = 'この内容を深掘り';
   
+  // Store reference to target for keyboard access
+  button._deepDiveTarget = target;
+  
   // Create SVG element using DOM API (avoid innerHTML for TrustedHTML)
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('width', '16');
   svg.setAttribute('height', '16');
-  svg.setAttribute('viewBox', '0 0 16 16');
+  svg.setAttribute('viewBox', '0 0 24 24');
   svg.setAttribute('fill', 'currentColor');
   
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  path.setAttribute('d', 'M8 3a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5zm0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z');
+  path.setAttribute('d', 'M6 17h3l2-4V7H5v6h3l-2 4zm8 0h3l2-4V7h-6v6h3l-2 4z');
   svg.appendChild(path);
-  
-  const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-  circle.setAttribute('cx', '8');
-  circle.setAttribute('cy', '8');
-  circle.setAttribute('r', '1.5');
-  svg.appendChild(circle);
   
   button.appendChild(svg);
   
@@ -191,6 +188,14 @@ function addDeepDiveButton(target) {
     insertDeepDiveQuery(target, isCtrlPressed);
   });
 
+  // Create expand button for sections and lists
+  let expandButton = null;
+  if (target.type === 'section' || target.type === 'list') {
+    expandButton = createExpandButton(target);
+    // Store reference to expand button on the deep dive button
+    button._expandButton = expandButton;
+  }
+
   // Position button based on element type
   if (target.type === 'section') {
     // Add button inline with heading
@@ -199,6 +204,9 @@ function addDeepDiveButton(target) {
     target.element.style.alignItems = 'center';
     target.element.style.gap = '8px';
     target.element.appendChild(button);
+    if (expandButton) {
+      target.element.appendChild(expandButton);
+    }
   } else if (target.type === 'table') {
     // Add button to table footer (next to copy button)
     const footer = target.element.querySelector('.table-footer');
@@ -224,6 +232,176 @@ function addDeepDiveButton(target) {
     button.style.top = '0';
     button.style.right = '0';
     target.element.appendChild(button);
+    
+    if (expandButton) {
+      expandButton.style.position = 'absolute';
+      expandButton.style.top = '0';
+      expandButton.style.right = '32px';
+      target.element.appendChild(expandButton);
+    }
+  }
+}
+
+// Create expand/collapse button for sections and lists
+function createExpandButton(target) {
+  const button = document.createElement('button');
+  button.className = 'deep-dive-expand-button';
+  button.setAttribute('aria-label', '細かく選択');
+  button.setAttribute('data-action', 'expand');
+  button.setAttribute('tabindex', '-1'); // Not keyboard focusable
+  button.title = '細かく選択';
+  button.textContent = '+';
+  button.style.fontSize = '14px';
+  button.style.fontWeight = 'bold';
+  
+  // Store reference to target for keyboard access
+  button.dataset.targetId = Math.random().toString(36).substr(2, 9);
+  target.expandButtonId = button.dataset.targetId;
+  
+  // Add click handler
+  button.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    toggleExpand(target, button);
+  });
+  
+  return button;
+}
+
+// Toggle expand/collapse state
+function toggleExpand(target, button) {
+  const isExpanded = button.getAttribute('data-action') === 'collapse';
+  
+  if (isExpanded) {
+    // Collapse: remove child buttons
+    collapseChildButtons(target);
+    button.setAttribute('data-action', 'expand');
+    button.setAttribute('aria-label', '細かく選択');
+    button.title = '細かく選択';
+    button.textContent = '+';
+  } else {
+    // Expand: add child buttons
+    expandChildButtons(target);
+    button.setAttribute('data-action', 'collapse');
+    button.setAttribute('aria-label', '閉じる');
+    button.title = '閉じる';
+    button.textContent = '-';
+  }
+}
+
+// Expand child buttons for a section or list
+function expandChildButtons(target) {
+  if (target.type === 'section') {
+    // Get all paragraphs and lists in the section
+    const heading = target.element;
+    let current = heading.nextElementSibling;
+    
+    while (current && !current.matches('h1, h2, h3, h4, h5, h6, hr')) {
+      // Skip if it's a table wrapper
+      if (current.classList.contains('table-block-component')) {
+        current = current.nextElementSibling;
+        continue;
+      }
+      
+      // Add button to paragraphs
+      if (current.tagName === 'P' && !current.querySelector('.deep-dive-child-button')) {
+        addChildButton(current);
+      }
+      
+      // For lists, add buttons to list items (not the list itself)
+      if ((current.tagName === 'UL' || current.tagName === 'OL') && 
+          current.hasAttribute('data-path-to-node')) {
+        
+        // Get direct children list items only
+        const items = current.querySelectorAll(':scope > li');
+        items.forEach(item => {
+          if (!item.querySelector('.deep-dive-child-button')) {
+            addChildButton(item);
+          }
+        });
+      }
+      
+      current = current.nextElementSibling;
+    }
+  } else if (target.type === 'list') {
+    // Get all list items
+    const list = target.element;
+    const items = list.querySelectorAll(':scope > li');
+    
+    items.forEach(item => {
+      if (!item.querySelector('.deep-dive-child-button')) {
+        addChildButton(item);
+      }
+    });
+  }
+}
+
+// Add a child button to an element
+function addChildButton(element) {
+  element.style.position = 'relative';
+  
+  const button = document.createElement('button');
+  button.className = 'deep-dive-button-inline deep-dive-child-button';
+  button.setAttribute('aria-label', 'この内容を深掘り');
+  button.setAttribute('data-action', 'deep-dive');
+  button.title = 'この内容を深掘り';
+  button.style.position = 'absolute';
+  button.style.top = '0';
+  button.style.right = '0';
+  
+  // Create SVG
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', '16');
+  svg.setAttribute('height', '16');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('fill', 'currentColor');
+  
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('d', 'M6 17h3l2-4V7H5v6h3l-2 4zm8 0h3l2-4V7h-6v6h3l-2 4z');
+  svg.appendChild(path);
+  
+  button.appendChild(svg);
+  
+  // Add click handler
+  button.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const isCtrlPressed = e.ctrlKey;
+    const childTarget = {
+      type: 'child',
+      element: element,
+      getContent: () => element.textContent.trim()
+    };
+    insertDeepDiveQuery(childTarget, isCtrlPressed);
+  });
+  
+  element.appendChild(button);
+}
+
+// Collapse (remove) child buttons
+function collapseChildButtons(target) {
+  if (target.type === 'section') {
+    const heading = target.element;
+    let current = heading.nextElementSibling;
+    
+    while (current && !current.matches('h1, h2, h3, h4, h5, h6, hr')) {
+      if (current.classList.contains('table-block-component')) {
+        current = current.nextElementSibling;
+        continue;
+      }
+      
+      // Remove all child buttons in this element and its descendants
+      const childButtons = current.querySelectorAll('.deep-dive-child-button');
+      childButtons.forEach(btn => btn.remove());
+      
+      current = current.nextElementSibling;
+    }
+  } else if (target.type === 'list') {
+    const list = target.element;
+    const childButtons = list.querySelectorAll('.deep-dive-child-button');
+    childButtons.forEach(btn => btn.remove());
   }
 }
 
@@ -325,6 +503,35 @@ function addDeepDiveStyles() {
     .deep-dive-button-inline svg {
       width: 16px;
       height: 16px;
+    }
+
+    /* Expand/collapse button */
+    .deep-dive-expand-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: none;
+      border-radius: 14px;
+      background: transparent;
+      color: #5f6368;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .deep-dive-expand-button:hover {
+      background: rgba(0, 0, 0, 0.05);
+      color: #1a73e8;
+    }
+
+    .deep-dive-expand-button:focus {
+      outline: 2px solid #1a73e8;
+      outline-offset: 2px;
     }
 
     /* Blockquote with deep dive button */
