@@ -300,8 +300,7 @@ function moveBetweenActionButtons(direction) {
       }
       return true;
     } else {
-      // First action button, so return to textarea
-      focusTextarea();
+      // At first button, stay there (don't go back to textarea)
       return true;
     }
   } else {
@@ -314,8 +313,7 @@ function moveBetweenActionButtons(direction) {
       }
       return true;
     } else {
-      // Last action button, so return to textarea
-      focusTextarea();
+      // At last button, stay there (don't go back to textarea)
       return true;
     }
   }

@@ -27,7 +27,7 @@ All keyboard shortcuts can be customized via the extension's options page. The d
 - `Insert`: Navigate to search screen
 - `Delete`: Toggle sidebar open/close
 - `Home`: Create new chat
-- `End`: Cycle through textarea → sidebar → action buttons (if responses exist) → textarea
+- `End`: Cycle through textarea → action buttons (if responses exist) → sidebar → textarea
 - `PageUp` / `PageDown`: Scroll chat area
 - `↑` / `↓`: Navigate through history (in history selection mode)
 - `Enter`: Open selected history
@@ -84,7 +84,7 @@ Explore Gemini's responses in more detail with inline deep dive buttons. Buttons
 
 **How to use:**
 
-1. Click the " (quote) button next to any section, table, or blockquote
+1. Click the ↳ (subdirectory arrow) button next to any section, table, or blockquote
 2. **Enter or normal click:** Quotes the content + adds "これについて詳しく" and auto-sends
 3. **Ctrl+Enter or Ctrl+click:** Only quotes the content, you add your own prompt
 
@@ -94,12 +94,12 @@ For sections and lists, you can expand to select individual paragraphs or list i
 
 1. Click the **+** button next to the deep dive button
 2. Or press `→` when deep dive button is focused to expand
-3. Select specific paragraphs or list items with their own " buttons
+3. Select specific paragraphs or list items with their own ↳ buttons
 4. Click the **-** button or press `←` to collapse back
 
 **Keyboard navigation:**
 
-- Press `End` key to cycle: textarea → sidebar → action buttons → textarea
+- Press `End` key to cycle: textarea → action buttons → sidebar → textarea
 - Press `↑` / `↓` with empty textarea to focus on buttons
 - Use `↑` / `↓` to move between deep dive buttons
 - Use `→` to expand, `←` to collapse (shows +/- indicator)

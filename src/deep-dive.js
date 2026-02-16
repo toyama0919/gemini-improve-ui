@@ -173,7 +173,7 @@ function addDeepDiveButton(target) {
   svg.setAttribute('fill', 'currentColor');
   
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  path.setAttribute('d', 'M6 17h3l2-4V7H5v6h3l-2 4zm8 0h3l2-4V7h-6v6h3l-2 4z');
+  path.setAttribute('d', 'M19 15l-6 6-1.5-1.5L15 16H4V9h2v5h9l-3.5-3.5L13 9l6 6z');
   svg.appendChild(path);
   
   button.appendChild(svg);
@@ -358,7 +358,7 @@ function addChildButton(element) {
   svg.setAttribute('fill', 'currentColor');
   
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  path.setAttribute('d', 'M6 17h3l2-4V7H5v6h3l-2 4zm8 0h3l2-4V7h-6v6h3l-2 4z');
+  path.setAttribute('d', 'M19 15l-6 6-1.5-1.5L15 16H4V9h2v5h9l-3.5-3.5L13 9l6 6z');
   svg.appendChild(path);
   
   button.appendChild(svg);

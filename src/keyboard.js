@@ -153,9 +153,11 @@ function handleChatPageKeydown(event) {
     const hasResponses = actionButtons.length > 0;
     
     if (isHistorySelectionMode()) {
-      // From sidebar: go to action buttons if responses exist, otherwise back to textarea
+      // From sidebar: go back to textarea
       exitHistorySelectionMode();
-      
+      focusTextarea();
+    } else if (isInInput) {
+      // From textarea: go to action buttons if responses exist, otherwise to sidebar
       if (hasResponses) {
         // Use remembered position, or default to last button
         let targetIndex = lastFocusedActionButtonIndex;
@@ -164,12 +166,9 @@ function handleChatPageKeydown(event) {
         }
         actionButtons[targetIndex].focus();
       } else {
-        // No responses, go back to textarea
-        focusTextarea();
+        // No responses, go to sidebar
+        enterHistorySelectionMode();
       }
-    } else if (isInInput) {
-      // From textarea: go to sidebar (history selection mode)
-      enterHistorySelectionMode();
     } else {
       // From action button or other: check if we're on an action button
       const focusedElement = document.activeElement;
@@ -184,8 +183,8 @@ function handleChatPageKeydown(event) {
           lastFocusedActionButtonIndex = currentIndex;
         }
         
-        // From action button: go back to textarea
-        focusTextarea();
+        // From action button: go to sidebar
+        enterHistorySelectionMode();
       } else {
         // Otherwise: go to textarea
         focusTextarea();
