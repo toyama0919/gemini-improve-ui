@@ -33,6 +33,7 @@ check_debug_chrome() {
 start_chrome() {
   local FOREGROUND=false
   local OPEN_TEST_CHAT=false
+  local HEADLESS=false
   
   while [[ $# -gt 0 ]]; do
     case $1 in
@@ -42,6 +43,10 @@ start_chrome() {
         ;;
       --test)
         OPEN_TEST_CHAT=true
+        shift
+        ;;
+      --headless)
+        HEADLESS=true
         shift
         ;;
       *)
@@ -72,7 +77,13 @@ start_chrome() {
   local CHROME_ARGS=(
     "--remote-debugging-port=${CHROME_DEBUG_PORT}"
     "--user-data-dir=${CHROME_USER_DIR}"
+    "--load-extension=$(pwd)"
+    "--disable-extensions-except=$(pwd)"
   )
+  
+  if [ "$HEADLESS" = true ]; then
+    CHROME_ARGS+=("--headless=new")
+  fi
   
   if [ "$OPEN_TEST_CHAT" = true ]; then
     CHROME_ARGS+=("${TEST_CHAT_URL}")
@@ -95,7 +106,11 @@ start_chrome() {
 
     if check_debug_chrome; then
       echo -e "${GREEN}Chrome started successfully (PID: ${CHROME_PID})${NC}"
+      if [ "$HEADLESS" = true ]; then
+        echo -e "${GREEN}Mode: Headless${NC}"
+      fi
       echo -e "${GREEN}Remote debugging available at http://localhost:${CHROME_DEBUG_PORT}${NC}"
+      echo -e "${GREEN}Extension auto-loaded from: $(pwd)${NC}"
       if [ "$OPEN_TEST_CHAT" = true ]; then
         echo -e "${GREEN}Test chat opened: ${TEST_CHAT_URL}${NC}"
       fi
@@ -120,7 +135,11 @@ start_chrome() {
 
     if check_debug_chrome; then
       echo -e "${GREEN}Chrome started successfully (PID: ${CHROME_PID})${NC}"
+      if [ "$HEADLESS" = true ]; then
+        echo -e "${GREEN}Mode: Headless${NC}"
+      fi
       echo -e "${GREEN}Remote debugging available at http://localhost:${CHROME_DEBUG_PORT}${NC}"
+      echo -e "${GREEN}Extension auto-loaded from: $(pwd)${NC}"
       if [ "$OPEN_TEST_CHAT" = true ]; then
         echo -e "${GREEN}Test chat opened: ${TEST_CHAT_URL}${NC}"
       fi
@@ -186,13 +205,15 @@ check_status() {
 
 case "$1" in
   start)
-    start_chrome "$2"
+    shift
+    start_chrome "$@"
     ;;
   stop)
     stop_chrome
     ;;
   restart)
-    restart_chrome
+    shift
+    restart_chrome "$@"
     ;;
   status|check)
     check_status
@@ -201,18 +222,20 @@ case "$1" in
     echo "Usage: $0 {start|stop|restart|status}"
     echo ""
     echo "Commands:"
-    echo "  start [--fg] [--test]  - Start Chrome in remote debugging mode"
+    echo "  start [options]        - Start Chrome in remote debugging mode"
+    echo "                           Extension is auto-loaded from current directory"
     echo "                           --fg: Run in foreground (auto-stops on Ctrl+C)"
+    echo "                           --headless: Run in headless mode"
     echo "                           --test: Open test chat URL"
     echo "  stop                   - Stop debug Chrome (leaves normal Chrome running)"
-    echo "  restart [--test]       - Restart debug Chrome"
+    echo "  restart [options]      - Restart debug Chrome (reloads extension)"
     echo "  status                 - Check if debug Chrome is running"
     echo ""
     echo "Examples:"
-    echo "  ./dev.sh start                  # Start in background"
-    echo "  ./dev.sh start --fg             # Start in foreground (auto-cleanup)"
-    echo "  ./dev.sh start --test           # Start and open test chat"
-    echo "  ./dev.sh restart --test         # Restart and open test chat"
+    echo "  ./dev.sh start                      # Start with extension auto-loaded"
+    echo "  ./dev.sh start --headless           # Headless with extension"
+    echo "  ./dev.sh start --headless --test    # Headless + test chat"
+    echo "  ./dev.sh restart --headless         # Restart (reloads extension)"
     exit 1
     ;;
 esac

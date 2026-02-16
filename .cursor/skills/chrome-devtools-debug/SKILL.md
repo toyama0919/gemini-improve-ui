@@ -5,18 +5,18 @@ description: Debug Chrome extensions using chrome-devtools-mcp. Use when testing
 
 # Chrome DevTools Debug
 
-Debugging workflow for Chrome extension development using MCP (Model Context Protocol).
+Debugging workflow for Chrome extension development using MCP (Model Context Protocol). Supports headless mode for background debugging.
 
 ## Quick Start
 
-**1. Start Debug Chrome**
+**1. Start Debug Chrome (Headless Recommended)**
 
 ```bash
-./dev.sh start           # Start in background (recommended)
-./dev.sh start --test    # Open test chat URL
-./dev.sh start --fg      # Start in foreground (stop with Ctrl+C)
-./dev.sh stop            # Stop debug Chrome only (normal Chrome unaffected)
-./dev.sh restart --test  # Restart and open test chat
+./dev.sh start --headless        # Headless mode (recommended)
+./dev.sh start                   # Normal mode with GUI
+./dev.sh start --fg --headless   # Headless + foreground (stop with Ctrl+C)
+./dev.sh stop                    # Stop (normal Chrome unaffected)
+./dev.sh restart --headless      # Restart in headless mode
 ```
 
 **2. Verify Connection**
@@ -82,25 +82,78 @@ evaluate_script(() => {
 
 ### Testing Extensions
 
-1. **Load extension in Debug Chrome**
+**Extension is automatically loaded on Chrome startup!**
+
+The extension from current directory is auto-loaded using `--load-extension` flag.
+
+1. **Start Debug Chrome**
+   
    ```bash
-   ./dev.sh start --test  # Opens test chat (https://gemini.google.com/app/6cbdc99490e24d7e)
+   ./dev.sh start --headless
+   # Extension is automatically loaded from $(pwd)
    ```
-   - Go to `chrome://extensions/`
-   - Enable "Developer mode"
-   - Click "Load unpacked" and select project directory
 
-2. **Verify Functionality**
+2. **Reload Extension After Code Changes**
+   
+   **Recommended: Restart Chrome**
+   ```bash
+   ./dev.sh restart --headless
+   # Clean reload - extension is automatically reloaded
+   ```
+   
+   **Alternative: Using chrome.runtime.reload()**
+   
+   Add to `src/background.js`:
    ```javascript
-   // take_snapshot() to get DOM structure
-   // evaluate_script() to check console logs
-   // click(), fill() to test UI interactions
+   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+     if (request.action === 'reload') {
+       chrome.runtime.reload();
+       sendResponse({ reloaded: true });
+       return true;
+     }
+   });
+   ```
+   
+   Then trigger from content script:
+   ```javascript
+   evaluate_script(() => {
+     chrome.runtime.sendMessage({ action: 'reload' });
+     return { reloadTriggered: true };
+   })
    ```
 
-3. **Fix Issues**
-   - Modify code
-   - Click reload button in `chrome://extensions/`
-   - Test again
+3. **Verify Functionality**
+   ```javascript
+   // Navigate to test page
+   navigate_page({ type: "url", url: "https://gemini.google.com/app/6cbdc99490e24d7e" })
+   
+   // Wait for page load
+   wait_for({ text: "Gemini" })
+   
+   // Take snapshot to verify extension features are present
+   take_snapshot()
+   
+   // Test extension functionality
+   evaluate_script(() => {
+     return {
+       keyboardHandlerExists: typeof window.handleGeminiKeyboard !== 'undefined',
+       deepDiveButtonCount: document.querySelectorAll('.deep-dive-button-inline').length,
+       chatMaxWidth: getComputedStyle(document.documentElement).getPropertyValue('--chat-max-width')
+     };
+   })
+   ```
+
+4. **Development Workflow**
+   ```bash
+   # Edit code
+   vim src/chat.js
+   
+   # Reload extension (restart Chrome)
+   ./dev.sh restart --headless
+   
+   # Extension is automatically reloaded
+   # Test changes via MCP tools
+   ```
 
 ### Inspecting DOM Structure
 
@@ -127,12 +180,33 @@ Check API requests and responses:
 ## Debug Commands
 
 ```bash
-./dev.sh start           # Start debug Chrome (no-op if already running)
-./dev.sh start --test    # Start debug Chrome + open test chat
-./dev.sh stop            # Stop debug Chrome (port 9222 only, normal Chrome unaffected)
-./dev.sh restart --test  # Restart + open test chat
-./dev.sh status          # Check status
+# Recommended: Start in headless mode
+./dev.sh start --headless
+
+# Normal mode (with GUI)
+./dev.sh start
+
+# Headless + foreground (stop with Ctrl+C)
+./dev.sh start --fg --headless
+
+# Start with test chat open
+./dev.sh start --headless --test
+
+# Stop (port 9222 only, normal Chrome unaffected)
+./dev.sh stop
+
+# Restart
+./dev.sh restart --headless
+
+# Check status
+./dev.sh status
 ```
+
+**Headless Mode Benefits:**
+- Lower resource consumption
+- Runs in background without UI interference
+- Ideal for CI/CD automated testing
+- All MCP tools work normally
 
 ## Troubleshooting
 
