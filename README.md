@@ -83,8 +83,10 @@ Explore Gemini's responses in more detail with inline deep dive buttons. Buttons
 **How to use:**
 
 1. Click the ↳ (subdirectory arrow) button next to any section, table, or blockquote
-2. **Enter or normal click:** Quotes the content + adds "これについて詳しく" and auto-sends
+2. **Enter or normal click:** Quotes the content + adds prompt (default: "これについて詳しく") and auto-sends
 3. **Ctrl+Enter or Ctrl+click:** Only quotes the content, you add your own prompt
+
+The default prompt can be customized in extension options (right-click the extension icon → Options). Leave empty to only quote without auto-send.
 
 **Fine-grained selection:**
 

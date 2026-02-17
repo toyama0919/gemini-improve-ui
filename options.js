@@ -57,12 +57,18 @@ let currentShortcuts = JSON.parse(JSON.stringify(DEFAULT_SHORTCUTS));
 // Current chat width
 let currentChatWidth = 900;
 
+// Default deep dive prompt
+const DEFAULT_DEEP_DIVE_PROMPT = 'これについて詳しく';
+
+// Current deep dive prompt
+let currentDeepDivePrompt = DEFAULT_DEEP_DIVE_PROMPT;
+
 // Current context menu settings
 let currentContextMenuSettings = JSON.parse(JSON.stringify(DEFAULT_CONTEXT_MENU_SETTINGS));
 
 // Load settings from storage
 function loadSettings() {
-  chrome.storage.sync.get(['shortcuts', 'chatWidth', 'contextMenuSettings'], (result) => {
+  chrome.storage.sync.get(['shortcuts', 'chatWidth', 'contextMenuSettings', 'deepDivePrompt'], (result) => {
     if (result.shortcuts) {
       currentShortcuts = result.shortcuts;
     }
@@ -71,6 +77,11 @@ function loadSettings() {
     }
     if (result.contextMenuSettings) {
       currentContextMenuSettings = result.contextMenuSettings;
+    }
+    if (result.deepDivePrompt !== undefined) {
+      currentDeepDivePrompt = result.deepDivePrompt;
+    } else {
+      currentDeepDivePrompt = DEFAULT_DEEP_DIVE_PROMPT;
     }
     displaySettings();
   });
@@ -154,6 +165,12 @@ function displaySettings() {
   // Context menu items
   displayContextMenuItems();
 
+  // Deep dive prompt
+  const deepDivePromptInput = document.getElementById('deepDivePrompt');
+  if (deepDivePromptInput) {
+    deepDivePromptInput.value = currentDeepDivePrompt;
+  }
+
   // Chat width
   const chatWidthSlider = document.getElementById('chatWidth');
   const chatWidthValue = document.getElementById('chatWidthValue');
@@ -186,10 +203,17 @@ function displayShortcuts() {
 
 // Save settings to storage
 function saveSettings() {
+  // Gather current values from UI
+  const deepDivePromptInput = document.getElementById('deepDivePrompt');
+  if (deepDivePromptInput) {
+    currentDeepDivePrompt = deepDivePromptInput.value;
+  }
+
   chrome.storage.sync.set({
     shortcuts: currentShortcuts,
     chatWidth: currentChatWidth,
-    contextMenuSettings: currentContextMenuSettings
+    contextMenuSettings: currentContextMenuSettings,
+    deepDivePrompt: currentDeepDivePrompt
   }, () => {
     // Notify background script to update context menu
     chrome.runtime.sendMessage({
@@ -209,12 +233,14 @@ function saveShortcuts() {
 function resetSettings() {
   currentShortcuts = JSON.parse(JSON.stringify(DEFAULT_SHORTCUTS));
   currentChatWidth = 900;
+  currentDeepDivePrompt = DEFAULT_DEEP_DIVE_PROMPT;
   currentContextMenuSettings = JSON.parse(JSON.stringify(DEFAULT_CONTEXT_MENU_SETTINGS));
   displaySettings();
   chrome.storage.sync.set({
     shortcuts: currentShortcuts,
     chatWidth: currentChatWidth,
-    contextMenuSettings: currentContextMenuSettings
+    contextMenuSettings: currentContextMenuSettings,
+    deepDivePrompt: currentDeepDivePrompt
   }, () => {
     // Notify background script to update context menu
     chrome.runtime.sendMessage({

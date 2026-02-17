@@ -28,6 +28,31 @@ const DEFAULT_CONTEXT_MENU_SETTINGS = {
   items: DEFAULT_CONTEXT_MENU_ITEMS
 };
 
+// Default deep dive prompt (appended when clicking deep dive button without Ctrl)
+const DEFAULT_DEEP_DIVE_PROMPT = 'これについて詳しく';
+
+// Deep dive prompt (loaded from storage)
+let deepDivePrompt = DEFAULT_DEEP_DIVE_PROMPT;
+
+// Load deep dive prompt from Chrome storage
+function loadDeepDivePrompt() {
+  return new Promise((resolve) => {
+    chrome.storage.sync.get(['deepDivePrompt'], (result) => {
+      if (result.deepDivePrompt !== undefined) {
+        deepDivePrompt = result.deepDivePrompt;
+      } else {
+        deepDivePrompt = DEFAULT_DEEP_DIVE_PROMPT;
+      }
+      resolve(deepDivePrompt);
+    });
+  });
+}
+
+// Get deep dive prompt (synchronous, use after load)
+function getDeepDivePrompt() {
+  return deepDivePrompt || DEFAULT_DEEP_DIVE_PROMPT;
+}
+
 // Default keyboard shortcuts
 const DEFAULT_SHORTCUTS = {
   chat: {

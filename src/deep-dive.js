@@ -406,7 +406,7 @@ function collapseChildButtons(target) {
 }
 
 // Insert deep dive query into textarea
-function insertDeepDiveQuery(target, quoteOnly = false) {
+async function insertDeepDiveQuery(target, quoteOnly = false) {
   const textarea = document.querySelector('div[contenteditable="true"][role="textbox"]');
   if (!textarea) return;
 
@@ -416,12 +416,26 @@ function insertDeepDiveQuery(target, quoteOnly = false) {
   
   // Build query based on mode
   let query;
+  let shouldAutoSend = false;
+
   if (quoteOnly) {
     // Ctrl+Enter: Only quote (user will add their own prompt)
     query = quotedContent + '\n\n';
   } else {
-    // Normal Enter: Add default prompt
-    query = quotedContent + '\n\nこれについて詳しく';
+    // Normal Enter: Add prompt from options
+    const result = await new Promise((resolve) => {
+      chrome.storage.sync.get(['deepDivePrompt'], (r) => resolve(r));
+    });
+    const prompt = result.deepDivePrompt;
+    if (prompt === '') {
+      // Explicitly empty = quote only (no auto-send)
+      query = quotedContent + '\n\n';
+    } else {
+      // Use prompt (default 'これについて詳しく' when undefined)
+      const promptText = prompt !== undefined ? prompt : 'これについて詳しく';
+      query = quotedContent + '\n\n' + promptText;
+      shouldAutoSend = true;
+    }
   }
 
   // Clear textarea
@@ -453,8 +467,8 @@ function insertDeepDiveQuery(target, quoteOnly = false) {
   // Dispatch input event
   textarea.dispatchEvent(new Event('input', { bubbles: true }));
   
-  // If not quote-only mode, auto-send
-  if (!quoteOnly) {
+  // Auto-send when prompt is set (not in quote-only mode and prompt is not empty)
+  if (shouldAutoSend) {
     setTimeout(() => {
       const sendButton = document.querySelector('button[aria-label*="送信"], button[aria-label*="Send"]');
       if (sendButton && !sendButton.disabled) {
