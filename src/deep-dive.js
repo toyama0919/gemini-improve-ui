@@ -158,9 +158,9 @@ function getListContent(list) {
 function addDeepDiveButton(target) {
   const button = document.createElement('button');
   button.className = 'deep-dive-button-inline';
-  button.setAttribute('aria-label', 'この内容を深掘り');
+  button.setAttribute('aria-label', 'Deep dive into this content');
   button.setAttribute('data-action', 'deep-dive');
-  button.title = 'この内容を深掘り';
+  button.title = 'Deep dive into this content';
   
   // Store reference to target for keyboard access
   button._deepDiveTarget = target;
@@ -246,10 +246,10 @@ function addDeepDiveButton(target) {
 function createExpandButton(target) {
   const button = document.createElement('button');
   button.className = 'deep-dive-expand-button';
-  button.setAttribute('aria-label', '細かく選択');
+  button.setAttribute('aria-label', 'Expand to select');
   button.setAttribute('data-action', 'expand');
   button.setAttribute('tabindex', '-1'); // Not keyboard focusable
-  button.title = '細かく選択';
+  button.title = 'Expand to select';
   button.textContent = '+';
   button.style.fontSize = '14px';
   button.style.fontWeight = 'bold';
@@ -277,15 +277,15 @@ function toggleExpand(target, button) {
     // Collapse: remove child buttons
     collapseChildButtons(target);
     button.setAttribute('data-action', 'expand');
-    button.setAttribute('aria-label', '細かく選択');
-    button.title = '細かく選択';
+    button.setAttribute('aria-label', 'Expand to select');
+    button.title = 'Expand to select';
     button.textContent = '+';
   } else {
     // Expand: add child buttons
     expandChildButtons(target);
     button.setAttribute('data-action', 'collapse');
-    button.setAttribute('aria-label', '閉じる');
-    button.title = '閉じる';
+    button.setAttribute('aria-label', 'Collapse');
+    button.title = 'Collapse';
     button.textContent = '-';
   }
 }
@@ -343,9 +343,9 @@ function addChildButton(element) {
   
   const button = document.createElement('button');
   button.className = 'deep-dive-button-inline deep-dive-child-button';
-  button.setAttribute('aria-label', 'この内容を深掘り');
+  button.setAttribute('aria-label', 'Deep dive into this content');
   button.setAttribute('data-action', 'deep-dive');
-  button.title = 'この内容を深掘り';
+  button.title = 'Deep dive into this content';
   button.style.position = 'absolute';
   button.style.top = '0';
   button.style.right = '0';
