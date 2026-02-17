@@ -111,18 +111,6 @@ function handleChatPageKeydown(event) {
     return true;
   }
 
-  // Cmd+Shift+P: Toggle pin/unpin (disable only in history selection mode)
-  if (isShortcut(event, 'chat.togglePin')) {
-    // Disable only in history selection mode
-    if (isHistorySelectionMode()) {
-      return false;
-    }
-
-    event.preventDefault();
-    toggleChatPin();
-    return true;
-  }
-
   // Insert: Toggle between search page and chat page
   if (isShortcut(event, 'chat.navigateToSearch')) {
     event.preventDefault();

@@ -40,8 +40,7 @@ const DEFAULT_SHORTCUTS = {
     historyUp: 'ArrowUp',
     historyDown: 'ArrowDown',
     historyOpen: 'Enter',
-    historyExit: 'Escape',
-    togglePin: { key: 'KeyP', meta: true, shift: true }
+    historyExit: 'Escape'
   },
   search: {
     moveUp: 'ArrowUp',

@@ -337,58 +337,6 @@ function getAllActionButtons() {
   return actionButtons;
 }
 
-// Toggle pin/unpin current chat
-function toggleChatPin() {
-  // Try both menu button patterns (Workspace and non-Workspace)
-  // Use more specific selectors to avoid selecting sidebar menu buttons
-  const menuButton =
-    document.querySelector('conversation-actions button[data-test-id="actions-menu-button"]') ||
-    document.querySelector('button[data-test-id="conversation-actions-menu-icon-button"]');
-
-  if (!menuButton) {
-    return false;
-  }
-
-  // Check if menu is already open
-  const isMenuOpen = menuButton.getAttribute('aria-expanded') === 'true';
-
-  if (!isMenuOpen) {
-    // Open menu
-    menuButton.click();
-
-    // Wait for menu to appear, then click pin/unpin button
-    setTimeout(() => {
-      clickPinButton();
-    }, 100);
-  } else {
-    // Menu is already open, click directly
-    clickPinButton();
-  }
-
-  return true;
-}
-
-// Helper function to click pin/unpin button
-function clickPinButton() {
-  // Find pin button
-  const pinButton = document.querySelector('button[data-test-id="pin-button"]');
-
-  // Find unpin button
-  const unpinButton = document.querySelector('button[data-test-id="unpin-button"]');
-
-  // Click whichever button exists
-  if (pinButton) {
-    // For pin: don't return focus (let user confirm with Enter)
-    pinButton.click();
-  } else if (unpinButton) {
-    // For unpin: return focus to textarea after clicking
-    unpinButton.click();
-    setTimeout(() => {
-      focusTextarea();
-    }, 100);
-  }
-}
-
 // Initialize chat page
 function initializeChatPage() {
   // Check query parameter on page load

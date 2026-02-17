@@ -10,7 +10,6 @@ A Chrome extension that enhances Google Gemini Web UI with keyboard shortcuts, c
 - Recent chats history tracking
 - Efficient search result browsing
 - Sidebar element hiding (Gems list, My Stuff section)
-- Chat pin/unpin functionality
 - Quick access to copy buttons
 - **Deep dive into responses** - Explore topics in detail with inline buttons
 - Autocomplete for faster input
@@ -32,7 +31,6 @@ All keyboard shortcuts can be customized via the extension's options page. The d
 - `↑` / `↓`: Navigate through history (in history selection mode)
 - `Enter`: Open selected history
 - `Esc`: Exit history selection mode
-- `Cmd+Shift+P`: Toggle pin/unpin chat
 
 ### Search Screen (Default)
 
@@ -278,7 +276,7 @@ The code is organized into modular files for better maintainability:
 - **settings.js**: Manages keyboard shortcut settings and storage
 - **content.js**: Main initialization, entry point, and CSS injection
 - **keyboard.js**: Central keyboard event handling and shortcut routing
-- **chat.js**: Manages textarea, sidebar, scrolling, copy buttons, and pin functionality
+- **chat.js**: Manages textarea, sidebar, scrolling, and copy buttons
 - **history.js**: Manages chat history selection mode
 - **search.js**: Handles search result navigation and selection
 - **recent.js**: Tracks and manages recent chats history
