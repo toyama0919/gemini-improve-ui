@@ -96,14 +96,14 @@ function loadShortcuts() {
 function displayContextMenuItems() {
   const container = document.getElementById('contextMenuItems');
   if (!container) return;
-  
+
   container.innerHTML = '';
   const items = currentContextMenuSettings.items || [];
-  
+
   items.forEach((item, index) => {
     const itemDiv = document.createElement('div');
     itemDiv.style.cssText = 'border: 1px solid #e0e0e0; border-radius: 4px; padding: 16px; margin-bottom: 12px; background: #fafafa;';
-    
+
     itemDiv.innerHTML = `
       <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
         <input type="checkbox" id="item-enabled-${index}" ${item.enabled !== false ? 'checked' : ''} style="width: auto; margin: 0;">
@@ -112,22 +112,22 @@ function displayContextMenuItems() {
       </div>
       <textarea id="item-prompt-${index}" placeholder="Prompt template (use {{text}} for selected text)" style="width: 100%; min-height: 80px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 13px; resize: vertical;">${item.prompt || ''}</textarea>
     `;
-    
+
     container.appendChild(itemDiv);
-    
+
     // Add event listeners
     document.getElementById(`item-enabled-${index}`).addEventListener('change', (e) => {
       currentContextMenuSettings.items[index].enabled = e.target.checked;
     });
-    
+
     document.getElementById(`item-title-${index}`).addEventListener('input', (e) => {
       currentContextMenuSettings.items[index].title = e.target.value;
     });
-    
+
     document.getElementById(`item-prompt-${index}`).addEventListener('input', (e) => {
       currentContextMenuSettings.items[index].prompt = e.target.value;
     });
-    
+
     document.getElementById(`item-delete-${index}`).addEventListener('click', () => {
       if (confirm('Delete this menu item?')) {
         currentContextMenuSettings.items.splice(index, 1);
@@ -135,7 +135,7 @@ function displayContextMenuItems() {
       }
     });
   });
-  
+
   // Add "New Item" button
   const addButton = document.createElement('button');
   addButton.className = 'btn-primary';

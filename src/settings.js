@@ -114,9 +114,9 @@ function saveContextMenuSettings(settings) {
     chrome.storage.sync.set({ contextMenuSettings: settings }, () => {
       contextMenuSettings = settings;
       // Notify background script to update menus
-      chrome.runtime.sendMessage({ 
-        type: 'updateContextMenu', 
-        enabled: settings.enabled 
+      chrome.runtime.sendMessage({
+        type: 'updateContextMenu',
+        enabled: settings.enabled
       });
       resolve();
     });
