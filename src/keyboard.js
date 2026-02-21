@@ -118,7 +118,7 @@ function handleChatPageKeydown(event) {
     return true;
   }
 
-  // Home: Toggle sidebar
+  // Delete: Toggle sidebar
   if (isShortcut(event, 'chat.toggleSidebar')) {
     event.preventDefault();
     toggleSidebar();

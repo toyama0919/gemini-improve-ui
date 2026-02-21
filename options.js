@@ -5,7 +5,6 @@ const DEFAULT_SHORTCUTS = {
   chat: {
     navigateToSearch: 'Insert',
     toggleSidebar: 'Delete',
-    newChat: 'Home',
     toggleHistoryMode: 'End',
     scrollUp: 'PageUp',
     scrollDown: 'PageDown',
