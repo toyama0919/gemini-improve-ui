@@ -15,7 +15,7 @@ function injectMapStyles() {
       top: 50%;
       transform: translateY(-50%);
       max-height: 70vh;
-      width: 280px;
+      width: 240px;
       background: rgba(248, 249, 250, 0.95);
       border: 1px solid rgba(0, 0, 0, 0.1);
       border-radius: 12px;
