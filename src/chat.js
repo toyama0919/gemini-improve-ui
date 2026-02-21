@@ -1,27 +1,5 @@
 // Chat UI functionality (textarea, sidebar, scrolling, copy buttons)
 
-// Sidebar toggle
-let lastClickTime = 0;
-
-// Toggle sidebar open/close
-function toggleSidebar() {
-  // Don't do anything if clicked within 1 second (wait for animation)
-  const now = Date.now();
-  if (now - lastClickTime < 1000) {
-    return;
-  }
-
-  // Click menu button to toggle (use aria-label for stability)
-  const menuButton = document.querySelector('button[aria-label*="メインメニュー"]') ||
-                     document.querySelector('button[aria-label*="Main menu"]') ||
-                     document.querySelector('button[data-test-id="side-nav-menu-button"]');
-
-  if (menuButton) {
-    menuButton.click();
-    lastClickTime = now;
-  }
-}
-
 // Chat area cache
 let cachedChatArea = null;
 let chatAreaCacheTime = 0;
@@ -337,8 +315,72 @@ function getAllActionButtons() {
   return actionButtons;
 }
 
+// Find the sidebar toggle button
+function findSidebarToggleButton() {
+  return document.querySelector('[data-test-id="side-nav-toggle"]') ||
+         document.querySelector('button[aria-label*="メニュー"]') ||
+         document.querySelector('button[aria-label*="menu"]') ||
+         document.querySelector('button[aria-label*="Menu"]');
+}
+
+// Check if mat-sidenav is currently open
+function isSidebarOpen() {
+  const sidenav = document.querySelector('mat-sidenav');
+  if (!sidenav) return true; // Can't determine, assume open
+  return sidenav.classList.contains('mat-drawer-opened');
+}
+
+// Keep sidebar always open using MutationObserver
+let sidebarObserver = null;
+
+function keepSidebarOpen() {
+  if (sidebarObserver) {
+    sidebarObserver.disconnect();
+    sidebarObserver = null;
+  }
+
+  const sidenav = document.querySelector('mat-sidenav');
+  if (!sidenav) {
+    // mat-sidenav not yet in DOM - retry
+    let retries = 0;
+    const interval = setInterval(() => {
+      retries++;
+      const nav = document.querySelector('mat-sidenav');
+      if (nav || retries >= 10) {
+        clearInterval(interval);
+        if (nav) keepSidebarOpen();
+      }
+    }, 500);
+    return;
+  }
+
+  // Open immediately if currently closed
+  if (!isSidebarOpen()) {
+    const toggle = findSidebarToggleButton();
+    if (toggle) toggle.click();
+  }
+
+  // Watch for closed state and re-open
+  sidebarObserver = new MutationObserver(() => {
+    if (!isSidebarOpen()) {
+      const toggle = findSidebarToggleButton();
+      if (toggle) toggle.click();
+    }
+  });
+
+  sidebarObserver.observe(sidenav, {
+    attributes: true,
+    attributeFilter: ['class'],
+  });
+}
+
 // Initialize chat page
 function initializeChatPage() {
+  // Keep sidebar always open
+  setTimeout(() => {
+    keepSidebarOpen();
+  }, 1000);
+
   // Check query parameter on page load
   setTimeout(() => {
     setQueryFromUrl();

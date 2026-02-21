@@ -80,6 +80,11 @@ function initialize() {
         window.rememberActionButtonPosition(-1);
       }
 
+      // Reset map mode on navigation
+      if (typeof resetMapMode === 'function') {
+        resetMapMode();
+      }
+
       // Wait for new page to load
       setTimeout(() => {
         if (typeof initializeAutocomplete === 'function') {

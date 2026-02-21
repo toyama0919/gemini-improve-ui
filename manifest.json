@@ -25,6 +25,7 @@
         "src/history.js",
         "src/autocomplete.js",
         "src/chat.js",
+        "src/map.js",
         "src/dom-analyzer.js",
         "src/deep-dive.js",
         "src/keyboard.js",

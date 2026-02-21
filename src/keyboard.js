@@ -118,13 +118,6 @@ function handleChatPageKeydown(event) {
     return true;
   }
 
-  // Delete: Toggle sidebar open/close
-  if (isShortcut(event, 'chat.toggleSidebar')) {
-    event.preventDefault();
-    toggleSidebar();
-    return true;
-  }
-
   // Home: Create new chat
   if (isShortcut(event, 'chat.newChat')) {
     event.preventDefault();
@@ -132,59 +125,65 @@ function handleChatPageKeydown(event) {
     return true;
   }
 
-  // End: Cycle through textarea → sidebar → action buttons → textarea
+  // End: Cycle  textarea → chat-area → チャット一覧 → map → textarea
   if (isShortcut(event, 'chat.toggleHistoryMode')) {
     event.preventDefault();
 
-    // Check if there are any action buttons (responses exist)
     const actionButtons = getAllActionButtons();
     const hasResponses = actionButtons.length > 0;
-    
-    if (isHistorySelectionMode()) {
-      // From sidebar: go back to textarea
-      exitHistorySelectionMode();
+
+    if (typeof isMapSelectionMode === 'function' && isMapSelectionMode()) {
+      // [map] → textarea  (map stays visible)
+      exitMapSelectionMode();
       focusTextarea();
+
+    } else if (isHistorySelectionMode()) {
+      // [チャット一覧] → map
+      exitHistorySelectionMode();
+      if (typeof isMapMode === 'function' && !isMapMode()) showMap();
+      enterMapSelectionMode();
+
     } else if (isInInput) {
-      // From textarea: go to action buttons if responses exist, otherwise to sidebar
+      // [textarea] → action buttons (if any) / チャット一覧 (if none)
       if (hasResponses) {
-        // Use remembered position, or default to last button
         let targetIndex = lastFocusedActionButtonIndex;
         if (targetIndex < 0 || targetIndex >= actionButtons.length) {
           targetIndex = actionButtons.length - 1;
         }
         actionButtons[targetIndex].focus();
       } else {
-        // No responses, go to sidebar
+        // No action buttons: skip straight to チャット一覧
+        if (typeof isMapMode === 'function' && isMapMode()) hideMap();
         enterHistorySelectionMode();
       }
+
     } else {
-      // From action button or other: check if we're on an action button
+      // [chat-area / action button] → チャット一覧
       const focusedElement = document.activeElement;
       const isActionButton = focusedElement &&
                             (focusedElement.classList?.contains('deep-dive-button-inline') ||
                              focusedElement.getAttribute('data-action') === 'deep-dive');
-      
       if (isActionButton) {
-        // Remember current button position before leaving
         const currentIndex = actionButtons.findIndex(btn => btn === focusedElement);
-        if (currentIndex !== -1) {
-          lastFocusedActionButtonIndex = currentIndex;
-        }
-        
-        // From action button: go to sidebar
+        if (currentIndex !== -1) lastFocusedActionButtonIndex = currentIndex;
+        if (typeof isMapMode === 'function' && isMapMode()) hideMap();
         enterHistorySelectionMode();
       } else {
-        // Otherwise: go to textarea
         focusTextarea();
       }
     }
     return true;
   }
 
-  // Esc: Exit history selection mode
-  if (isHistorySelectionMode() && isShortcut(event, 'chat.historyExit')) {
+  // Esc: Exit history or map selection mode
+  if ((isHistorySelectionMode() || (typeof isMapSelectionMode === 'function' && isMapSelectionMode())) &&
+      isShortcut(event, 'chat.historyExit')) {
     event.preventDefault();
-    exitHistorySelectionMode();
+    if (typeof isMapSelectionMode === 'function' && isMapSelectionMode()) {
+      exitMapSelectionMode();
+    } else {
+      exitHistorySelectionMode();
+    }
     return true;
   }
 
@@ -200,6 +199,23 @@ function handleChatPageKeydown(event) {
     event.preventDefault();
     scrollChatArea('down');
     return true;
+  }
+
+  // Always process arrow keys and Enter in map selection mode
+  if (typeof isMapSelectionMode === 'function' && isMapSelectionMode()) {
+    if (isShortcut(event, 'chat.historyUp')) {
+      event.preventDefault();
+      moveMapUp();
+      return true;
+    } else if (isShortcut(event, 'chat.historyDown')) {
+      event.preventDefault();
+      moveMapDown();
+      return true;
+    } else if (isShortcut(event, 'chat.historyOpen')) {
+      event.preventDefault();
+      openSelectedMapItem();
+      return true;
+    }
   }
 
   // Always process arrow keys and Enter in history selection mode
@@ -220,7 +236,9 @@ function handleChatPageKeydown(event) {
   }
 
   // Focus on action button (copy/deep-dive) when up/down keys are pressed with empty textarea
-  if (!isHistorySelectionMode() && isInInput &&
+  const inAnySelectionMode = isHistorySelectionMode() ||
+    (typeof isMapSelectionMode === 'function' && isMapSelectionMode());
+  if (!inAnySelectionMode && isInInput &&
       (isShortcut(event, 'chat.historyUp') || isShortcut(event, 'chat.historyDown'))) {
     const textarea = document.querySelector('div[contenteditable="true"][role="textbox"]');
 
@@ -232,8 +250,8 @@ function handleChatPageKeydown(event) {
     }
   }
 
-  // Arrow key operations outside history selection mode and when not in input field
-  if (!isHistorySelectionMode() && !isInInput) {
+  // Arrow key operations outside selection modes and when not in input field
+  if (!inAnySelectionMode && !isInInput) {
     // Processing when action button (deep-dive) has focus
     const focusedElement = document.activeElement;
     const isActionButton = focusedElement &&
@@ -280,19 +298,6 @@ function handleChatPageKeydown(event) {
       }
     }
 
-    if (isShortcut(event, 'chat.historyUp')) {
-      event.preventDefault();
-      moveHistoryUp();
-      return true;
-    } else if (isShortcut(event, 'chat.historyDown')) {
-      event.preventDefault();
-      moveHistoryDown();
-      return true;
-    } else if (isShortcut(event, 'chat.historyOpen')) {
-      event.preventDefault();
-      openSelectedHistory();
-      return true;
-    }
   }
 
   return false;
