@@ -15,7 +15,7 @@ function injectMapStyles() {
       top: 50%;
       transform: translateY(-50%);
       max-height: 70vh;
-      width: 200px;
+      width: 280px;
       background: rgba(248, 249, 250, 0.95);
       border: 1px solid rgba(0, 0, 0, 0.1);
       border-radius: 12px;
@@ -241,26 +241,6 @@ function showMap() {
 
   setupIntersectionObserver();
   startChatObserver();
-}
-
-function hideMap() {
-  const panel = document.getElementById(MAP_PANEL_ID);
-  if (panel) panel.remove();
-  mapMode = false;
-  stopIntersectionObserver();
-  stopChatObserver();
-}
-
-function toggleMapMode() {
-  if (mapMode) {
-    hideMap();
-  } else {
-    showMap();
-  }
-}
-
-function isMapMode() {
-  return mapMode;
 }
 
 // Reset map state on navigation (called from content.js on URL change)

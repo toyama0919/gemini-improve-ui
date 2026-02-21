@@ -1,6 +1,6 @@
 # Gemini Chat UI Improvements
 
-A Chrome extension that enhances Google Gemini Web UI with keyboard shortcuts, customizable chat width, and autocomplete features.
+A Chrome extension that enhances Google Gemini Web UI with keyboard shortcuts, customizable chat width, autocomplete, and a conversation map panel.
 
 ## Features
 
@@ -16,6 +16,7 @@ A Chrome extension that enhances Google Gemini Web UI with keyboard shortcuts, c
 - DOM structure analysis for AI developers
 - **Context menu integration** - Right-click on selected text to send to Gemini
 - **URL query parameter** - Open Gemini with pre-filled questions via URL (`?q=...`)
+- **Conversation map** - Fixed right-side panel showing the outline of the current chat with scroll-position highlight
 
 ## Keyboard Shortcuts
 
@@ -24,8 +25,7 @@ All keyboard shortcuts can be customized via the extension's options page. The d
 ### Chat Screen (Default)
 
 - `Insert`: Navigate to search screen
-- `Delete`: Toggle sidebar open/close
-- `Home`: Create new chat
+- `Home`: Toggle sidebar open/close
 - `End`: Cycle through textarea → action buttons (if responses exist) → sidebar → textarea
 - `PageUp` / `PageDown`: Scroll chat area
 - `↑` / `↓`: Navigate through history (in history selection mode)
@@ -104,6 +104,15 @@ For sections and lists, you can expand to select individual paragraphs or list i
 - Use `↑` / `↓` to move between deep dive buttons
 - Use `→` to expand, `←` to collapse (shows +/- indicator)
 - Press `Enter` to click the focused button
+
+### Conversation Map
+
+A fixed panel on the right side of the screen showing the outline of the current chat.
+
+- Always visible on chat pages
+- Highlights the chat turn currently visible in the viewport (scroll-position aware)
+- Click any item to smoothly scroll to that turn
+- Automatically updates when new turns are added
 
 ### URL Query Parameter
 
@@ -258,6 +267,7 @@ gemini-improve-ui/
 │   ├── content.js     # Main entry point and CSS injection
 │   ├── keyboard.js    # Keyboard event handlers
 │   ├── chat.js        # Chat UI functionality (textarea, sidebar, scroll)
+│   ├── map.js         # Conversation map panel (right-side outline view)
 │   ├── history.js     # Chat history selection mode
 │   ├── search.js      # Search page functionality
 │   ├── recent.js      # Recent chats tracking
@@ -279,6 +289,7 @@ The code is organized into modular files for better maintainability:
 - **content.js**: Main initialization, entry point, and CSS injection
 - **keyboard.js**: Central keyboard event handling and shortcut routing
 - **chat.js**: Manages textarea, sidebar, scrolling, and copy buttons
+- **map.js**: Conversation map panel — right-side fixed outline with IntersectionObserver-based scroll highlight
 - **history.js**: Manages chat history selection mode
 - **search.js**: Handles search result navigation and selection
 - **recent.js**: Tracks and manages recent chats history
