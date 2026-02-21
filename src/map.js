@@ -32,12 +32,7 @@ function injectMapStyles() {
       box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
     }
     #gemini-map-panel .map-header {
-      padding: 6px 10px 4px;
-      font-size: 10px;
-      font-weight: 600;
-      opacity: 0.45;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
+      display: none;
     }
     #gemini-map-panel ul {
       list-style: none;
@@ -55,7 +50,7 @@ function injectMapStyles() {
       padding: 5px 10px 5px 8px;
       margin: 1px 0;
       cursor: pointer;
-      font-size: 12px;
+      font-size: 15px;
       line-height: 1.35;
       color: inherit;
       font-family: inherit;
@@ -232,6 +227,7 @@ function refreshMap() {
 
   setupIntersectionObserver();
 }
+
 
 function showMap() {
   injectMapStyles();

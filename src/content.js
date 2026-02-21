@@ -27,13 +27,13 @@ function applyCustomStyles() {
     /* Adjust chat content area width (not main layout) */
     chat-window {
       max-width: var(--chat-max-width, 900px) !important;
-      margin-left: auto !important;
+      margin-left: 0 !important;
       margin-right: auto !important;
     }
 
     .conversation-container {
       max-width: var(--chat-max-width, 900px) !important;
-      margin-left: auto !important;
+      margin-left: 0 !important;
       margin-right: auto !important;
     }
   `;
