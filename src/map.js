@@ -1,8 +1,6 @@
-// Map view - shows current chat turn outline in sidebar
+// Map view - fixed right-side panel showing current chat outline with scroll highlight
 
 let mapMode = false;
-let mapSelectionMode = false;
-let mapSelectionIndex = 0;
 const MAP_PANEL_ID = 'gemini-map-panel';
 const MAP_STYLE_ID = 'gemini-map-styles';
 
@@ -12,17 +10,32 @@ function injectMapStyles() {
   style.id = MAP_STYLE_ID;
   style.textContent = `
     #gemini-map-panel {
-      display: none;
+      position: fixed;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      max-height: 70vh;
+      width: 200px;
+      background: rgba(248, 249, 250, 0.95);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
       overflow-y: auto;
-      padding: 8px 4px;
-      height: 100%;
-      box-sizing: border-box;
+      z-index: 100;
+      padding: 6px 4px;
+      font-family: inherit;
+      backdrop-filter: blur(8px);
+    }
+    .dark-theme #gemini-map-panel {
+      background: rgba(32, 33, 36, 0.95);
+      border-color: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
     }
     #gemini-map-panel .map-header {
-      padding: 8px 12px 6px;
-      font-size: 11px;
+      padding: 6px 10px 4px;
+      font-size: 10px;
       font-weight: 600;
-      opacity: 0.5;
+      opacity: 0.45;
       text-transform: uppercase;
       letter-spacing: 0.08em;
     }
@@ -37,67 +50,53 @@ function injectMapStyles() {
       text-align: left;
       background: none;
       border: none;
-      border-radius: 8px;
-      padding: 7px 12px;
+      border-left: 2px solid transparent;
+      border-radius: 0 6px 6px 0;
+      padding: 5px 10px 5px 8px;
       margin: 1px 0;
       cursor: pointer;
-      font-size: 13px;
-      line-height: 1.4;
+      font-size: 12px;
+      line-height: 1.35;
       color: inherit;
       font-family: inherit;
       word-break: break-word;
-      transition: background 0.15s;
+      opacity: 0.5;
+      transition: background 0.15s, opacity 0.15s, border-color 0.15s;
     }
     #gemini-map-panel li button:hover {
-      background: rgba(128, 128, 128, 0.18);
+      background: rgba(128, 128, 128, 0.12);
+      opacity: 0.85;
     }
-    #gemini-map-panel li button.map-item-selected {
-      background: rgba(26, 115, 232, 0.1);
-      outline: 2px solid #1a73e8;
-      outline-offset: -2px;
+    #gemini-map-panel li button.map-item-current {
+      opacity: 1;
+      background: rgba(26, 115, 232, 0.08);
+      border-left-color: #1a73e8;
     }
     #gemini-map-panel li button .map-turn-index {
       display: inline-block;
-      min-width: 22px;
-      font-size: 11px;
-      opacity: 0.45;
-      margin-right: 2px;
-      vertical-align: baseline;
+      min-width: 18px;
+      font-size: 10px;
+      opacity: 0.5;
+      margin-right: 3px;
     }
   `;
   document.head.appendChild(style);
 }
 
-// Extract clean prompt text from user-query element
 function getPromptText(userQuery) {
   const heading = userQuery.querySelector('h1, h2, h3, [role="heading"]');
   let text = heading?.textContent?.trim() || userQuery.textContent?.trim() || '';
-  // Remove "あなたのプロンプト" prefix
   text = text.replace(/^あなたのプロンプト\s*/, '');
-  // Remove "> " prefix added by deep-dive prompts
   text = text.replace(/^>\s*/, '');
-  return text.substring(0, 70) || '(空)';
+  return text.substring(0, 60) || '(空)';
 }
 
-// Get all conversation turn containers from the chat area
 function getConversationContainers() {
   return Array.from(document.querySelectorAll(
     'infinite-scroller.chat-history > .conversation-container'
   ));
 }
 
-// Find the sidebar root container (map panel injection target)
-function getSidebarContainer() {
-  return document.querySelector('.sidenav-with-history-container');
-}
-
-// Find the chat-list container to hide/show
-function getOverflowContainer() {
-  return document.querySelector('.sidenav-with-history-container > div.overflow-container') ||
-         document.querySelector('.sidenav-with-history-container .overflow-container');
-}
-
-// Build map panel DOM from current chat turns
 function buildMapPanel() {
   const panel = document.createElement('div');
   panel.id = MAP_PANEL_ID;
@@ -111,7 +110,7 @@ function buildMapPanel() {
 
   if (containers.length === 0) {
     const empty = document.createElement('div');
-    empty.style.cssText = 'padding: 12px; opacity: 0.5; font-size: 13px;';
+    empty.style.cssText = 'padding: 10px; opacity: 0.45; font-size: 12px;';
     empty.textContent = 'チャットがまだありません';
     panel.appendChild(empty);
     return panel;
@@ -145,112 +144,52 @@ function buildMapPanel() {
   return panel;
 }
 
-// Measure the height of native sidebar header elements (≡, 🔍 buttons etc.)
-// to offset the map panel list below them
-function measureSidebarHeaderHeight(sidebarContainer) {
-  const overflowContainer = getOverflowContainer();
-  let maxBottom = 0;
-
-  for (const child of sidebarContainer.children) {
-    if (child.id === MAP_PANEL_ID) continue;
-    if (child === overflowContainer) continue;
-    const rect = child.getBoundingClientRect();
-    if (rect.height > 0) {
-      const sidebarTop = sidebarContainer.getBoundingClientRect().top;
-      maxBottom = Math.max(maxBottom, rect.bottom - sidebarTop);
-    }
-  }
-
-  return maxBottom;
-}
-
-// Show map view (hide chat-list, inject map panel)
-function showMap() {
-  injectMapStyles();
-
-  const sidebarContainer = getSidebarContainer();
-  if (!sidebarContainer) return;
-
-  const overflowContainer = getOverflowContainer();
-
-  // Rebuild panel with fresh content every time
-  const existing = document.getElementById(MAP_PANEL_ID);
-  if (existing) existing.remove();
-
-  const panel = buildMapPanel();
-  sidebarContainer.appendChild(panel);
-
-  if (overflowContainer) overflowContainer.style.display = 'none';
-  panel.style.display = 'block';
-  mapMode = true;
-
-  // Offset list items below native sidebar header buttons (≡, 🔍)
-  requestAnimationFrame(() => {
-    const headerHeight = measureSidebarHeaderHeight(sidebarContainer);
-    if (headerHeight > 0) {
-      panel.style.paddingTop = `${headerHeight}px`;
-    }
-  });
-
-  // Start watching for new chat turns
-  startChatObserver();
-}
-
-// Show chat-list view (hide map panel, restore chat-list)
-function hideMap() {
-  const overflowContainer = getOverflowContainer();
+function getMapButtons() {
   const panel = document.getElementById(MAP_PANEL_ID);
-
-  if (overflowContainer) overflowContainer.style.display = '';
-  if (panel) panel.style.display = 'none';
-  mapMode = false;
-  stopChatObserver();
+  if (!panel) return [];
+  return Array.from(panel.querySelectorAll('li button'));
 }
 
-// Toggle between map and chat-list
-function toggleMapMode() {
-  if (mapMode) {
-    hideMap();
-  } else {
-    showMap();
+// IntersectionObserver: highlight map items for currently visible chat turns
+let intersectionObserver = null;
+const visibleTurns = new Set();
+
+function setupIntersectionObserver() {
+  if (intersectionObserver) intersectionObserver.disconnect();
+  visibleTurns.clear();
+
+  const containers = getConversationContainers();
+  if (containers.length === 0) return;
+
+  intersectionObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const index = containers.indexOf(entry.target);
+      if (index === -1) return;
+      if (entry.isIntersecting) {
+        visibleTurns.add(index);
+      } else {
+        visibleTurns.delete(index);
+      }
+    });
+
+    const buttons = getMapButtons();
+    buttons.forEach((btn, i) => {
+      btn.classList.toggle('map-item-current', visibleTurns.has(i));
+    });
+  }, { threshold: 0.15 });
+
+  containers.forEach(c => intersectionObserver.observe(c));
+}
+
+function stopIntersectionObserver() {
+  if (intersectionObserver) {
+    intersectionObserver.disconnect();
+    intersectionObserver = null;
   }
+  visibleTurns.clear();
 }
 
-function isMapMode() {
-  return mapMode;
-}
-
-// Rebuild map panel in place, preserving scroll and selection
-function refreshMap() {
-  if (!mapMode) return;
-
-  const sidebarContainer = getSidebarContainer();
-  if (!sidebarContainer) return;
-
-  const existing = document.getElementById(MAP_PANEL_ID);
-  const savedIndex = mapSelectionMode ? mapSelectionIndex : -1;
-  const savedScroll = existing ? existing.scrollTop : 0;
-
-  if (existing) existing.remove();
-
-  const panel = buildMapPanel();
-  sidebarContainer.appendChild(panel);
-  panel.style.display = 'block';
-
-  // Restore header offset
-  const headerHeight = measureSidebarHeaderHeight(sidebarContainer);
-  if (headerHeight > 0) panel.style.paddingTop = `${headerHeight}px`;
-
-  // Restore scroll position
-  panel.scrollTop = savedScroll;
-
-  // Restore selection highlight if in selection mode
-  if (savedIndex >= 0) {
-    highlightMapItem(savedIndex);
-  }
-}
-
-// Watch for new conversation turns and auto-refresh the map
+// MutationObserver: auto-refresh map when new chat turns are added
 let chatObserver = null;
 
 function startChatObserver() {
@@ -277,68 +216,62 @@ function stopChatObserver() {
   }
 }
 
-// Reset map state on navigation (called from content.js on URL change)
-function resetMapMode() {
-  stopChatObserver();
-  mapSelectionMode = false;
-  mapSelectionIndex = 0;
+// Rebuild map panel, preserving scroll position
+function refreshMap() {
+  if (!mapMode) return;
+
+  const existing = document.getElementById(MAP_PANEL_ID);
+  const savedScroll = existing ? existing.scrollTop : 0;
+  if (existing) existing.remove();
+
+  stopIntersectionObserver();
+
+  const panel = buildMapPanel();
+  document.body.appendChild(panel);
+  panel.scrollTop = savedScroll;
+
+  setupIntersectionObserver();
+}
+
+function showMap() {
+  injectMapStyles();
+
+  const existing = document.getElementById(MAP_PANEL_ID);
+  if (existing) existing.remove();
+
+  const panel = buildMapPanel();
+  document.body.appendChild(panel);
+  mapMode = true;
+
+  setupIntersectionObserver();
+  startChatObserver();
+}
+
+function hideMap() {
   const panel = document.getElementById(MAP_PANEL_ID);
   if (panel) panel.remove();
-  const overflowContainer = getOverflowContainer();
-  if (overflowContainer) overflowContainer.style.display = '';
   mapMode = false;
+  stopIntersectionObserver();
+  stopChatObserver();
 }
 
-// --- Map selection mode (keyboard navigation within map panel) ---
-
-function getMapButtons() {
-  const panel = document.getElementById(MAP_PANEL_ID);
-  if (!panel) return [];
-  return Array.from(panel.querySelectorAll('li button'));
-}
-
-function highlightMapItem(index) {
-  const buttons = getMapButtons();
-  if (buttons.length === 0) return;
-
-  mapSelectionIndex = Math.max(0, Math.min(index, buttons.length - 1));
-
-  buttons.forEach(btn => btn.classList.remove('map-item-selected'));
-
-  const selected = buttons[mapSelectionIndex];
-  if (selected) {
-    selected.classList.add('map-item-selected');
-    selected.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+function toggleMapMode() {
+  if (mapMode) {
+    hideMap();
+  } else {
+    showMap();
   }
 }
 
-function enterMapSelectionMode() {
-  mapSelectionMode = true;
-  if (document.activeElement) document.activeElement.blur();
-  highlightMapItem(mapSelectionIndex);
+function isMapMode() {
+  return mapMode;
 }
 
-function exitMapSelectionMode() {
-  mapSelectionMode = false;
-  getMapButtons().forEach(btn => btn.classList.remove('map-item-selected'));
-}
-
-function moveMapUp() {
-  highlightMapItem(mapSelectionIndex - 1);
-}
-
-function moveMapDown() {
-  highlightMapItem(mapSelectionIndex + 1);
-}
-
-function openSelectedMapItem() {
-  const buttons = getMapButtons();
-  if (!buttons[mapSelectionIndex]) return;
-  buttons[mapSelectionIndex].click();
-  // Keep map selection active so focus stays on map panel
-  highlightMapItem(mapSelectionIndex);
-}
-
-function isMapSelectionMode() {
-  return mapSelectionMode;
+// Reset map state on navigation (called from content.js on URL change)
+function resetMapMode() {
+  stopChatObserver();
+  stopIntersectionObserver();
+  const panel = document.getElementById(MAP_PANEL_ID);
+  if (panel) panel.remove();
+  mapMode = false;
 }

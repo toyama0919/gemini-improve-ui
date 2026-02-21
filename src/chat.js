@@ -330,57 +330,14 @@ function isSidebarOpen() {
   return sidenav.classList.contains('mat-drawer-opened');
 }
 
-// Keep sidebar always open using MutationObserver
-let sidebarObserver = null;
-
-function keepSidebarOpen() {
-  if (sidebarObserver) {
-    sidebarObserver.disconnect();
-    sidebarObserver = null;
-  }
-
-  const sidenav = document.querySelector('mat-sidenav');
-  if (!sidenav) {
-    // mat-sidenav not yet in DOM - retry
-    let retries = 0;
-    const interval = setInterval(() => {
-      retries++;
-      const nav = document.querySelector('mat-sidenav');
-      if (nav || retries >= 10) {
-        clearInterval(interval);
-        if (nav) keepSidebarOpen();
-      }
-    }, 500);
-    return;
-  }
-
-  // Open immediately if currently closed
-  if (!isSidebarOpen()) {
-    const toggle = findSidebarToggleButton();
-    if (toggle) toggle.click();
-  }
-
-  // Watch for closed state and re-open
-  sidebarObserver = new MutationObserver(() => {
-    if (!isSidebarOpen()) {
-      const toggle = findSidebarToggleButton();
-      if (toggle) toggle.click();
-    }
-  });
-
-  sidebarObserver.observe(sidenav, {
-    attributes: true,
-    attributeFilter: ['class'],
-  });
+// Toggle sidebar open/close
+function toggleSidebar() {
+  const toggle = findSidebarToggleButton();
+  if (toggle) toggle.click();
 }
 
 // Initialize chat page
 function initializeChatPage() {
-  // Keep sidebar always open
-  setTimeout(() => {
-    keepSidebarOpen();
-  }, 1000);
-
   // Check query parameter on page load
   setTimeout(() => {
     setQueryFromUrl();

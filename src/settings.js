@@ -57,7 +57,7 @@ function getDeepDivePrompt() {
 const DEFAULT_SHORTCUTS = {
   chat: {
     navigateToSearch: 'Insert',
-    newChat: 'Home',
+    toggleSidebar: 'Home',
     toggleHistoryMode: 'End',
     scrollUp: 'PageUp',
     scrollDown: 'PageDown',

@@ -93,6 +93,10 @@ function initialize() {
         if (typeof initializeSearchAutocomplete === 'function') {
           initializeSearchAutocomplete();
         }
+        // Re-show map after navigation
+        if (!isSearchPage() && typeof showMap === 'function') {
+          showMap();
+        }
       }, 1500);
     }
   }).observe(document, { subtree: true, childList: true });
@@ -112,6 +116,10 @@ function initialize() {
     if (typeof initializeDeepDive === 'function') {
       initializeDeepDive();
     }
+    // Show map panel on load
+    setTimeout(() => {
+      if (typeof showMap === 'function') showMap();
+    }, 1500);
   }
 
   // Listen for storage changes to update width dynamically
