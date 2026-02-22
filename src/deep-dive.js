@@ -1,5 +1,10 @@
 // Deep dive functionality for Gemini responses
 
+// Default modes (fallback when not in storage)
+const DEFAULT_DEEP_DIVE_MODES = [
+  { id: 'default', name: '標準', prompt: 'これについて詳しく' }
+];
+
 // Add deep dive buttons to response sections
 function addDeepDiveButtons() {
   // Target elements for deep dive buttons
@@ -422,20 +427,17 @@ async function insertDeepDiveQuery(target, quoteOnly = false) {
     // Ctrl+Enter: Only quote (user will add their own prompt)
     query = quotedContent + '\n\n';
   } else {
-    // Normal Enter: Add prompt from options
+    // Normal Enter: Add prompt from selected mode
     const result = await new Promise((resolve) => {
-      chrome.storage.sync.get(['deepDivePrompt'], (r) => resolve(r));
+      chrome.storage.sync.get(['deepDiveModes', 'currentDeepDiveModeId'], resolve);
     });
-    const prompt = result.deepDivePrompt;
-    if (prompt === '') {
-      // Explicitly empty = quote only (no auto-send)
-      query = quotedContent + '\n\n';
-    } else {
-      // Use prompt (default 'これについて詳しく' when undefined)
-      const promptText = prompt !== undefined ? prompt : 'これについて詳しく';
-      query = quotedContent + '\n\n' + promptText;
-      shouldAutoSend = true;
-    }
+    const modes = (result.deepDiveModes && result.deepDiveModes.length > 0)
+      ? result.deepDiveModes
+      : DEFAULT_DEEP_DIVE_MODES;
+    const modeId = result.currentDeepDiveModeId || modes[0]?.id;
+    const mode = modes.find(m => m.id === modeId) || modes[0] || DEFAULT_DEEP_DIVE_MODES[0];
+    query = quotedContent + '\n\n' + (mode.prompt || 'これについて詳しく');
+    shouldAutoSend = true;
   }
 
   // Clear textarea
@@ -552,15 +554,128 @@ function addDeepDiveStyles() {
     blockquote[data-path-to-node] {
       padding-top: 40px;
     }
+
+    /* Mode selector - inline with + and ツール */
+    .gemini-deep-dive-mode-selector {
+      display: inline-flex !important;
+      align-items: center;
+      padding: 0 8px;
+      margin: 0 4px;
+      flex-shrink: 0;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+    body > .gemini-deep-dive-mode-selector {
+      position: fixed;
+      bottom: 100px;
+      left: 320px;
+      z-index: 9999;
+    }
+    .gemini-deep-dive-mode-selector select {
+      padding: 4px 8px;
+      border: 1px solid #dadce0;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 13px;
+      color: #5f6368;
+      cursor: pointer;
+      max-width: 100px;
+    }
+    .gemini-deep-dive-mode-selector select:hover {
+      border-color: #1a73e8;
+      color: #1a73e8;
+    }
   `;
   
   document.head.appendChild(style);
+}
+
+// Create and inject mode selector dropdown
+function injectModeSelector() {
+  // Remove existing to allow re-inject when modes change
+  const existing = document.getElementById('gemini-deep-dive-mode-selector');
+  if (existing) existing.remove();
+
+  chrome.storage.sync.get(['deepDiveModes', 'currentDeepDiveModeId'], (r) => {
+    const modes = (r.deepDiveModes && r.deepDiveModes.length > 0)
+      ? r.deepDiveModes
+      : DEFAULT_DEEP_DIVE_MODES;
+
+    const wrapper = document.createElement('div');
+    wrapper.id = 'gemini-deep-dive-mode-selector';
+    wrapper.className = 'gemini-deep-dive-mode-selector';
+
+    const select = document.createElement('select');
+    select.id = 'gemini-deep-dive-mode';
+    select.title = '深掘りモード';
+    select.setAttribute('aria-label', '深掘りモード');
+
+    modes.forEach(mode => {
+      const option = document.createElement('option');
+      option.value = mode.id;
+      option.textContent = mode.name || mode.id;
+      select.appendChild(option);
+    });
+
+    select.addEventListener('change', () => {
+      chrome.storage.sync.set({ currentDeepDiveModeId: select.value });
+    });
+
+    wrapper.appendChild(select);
+
+    // Add after + and ツール buttons
+    const addButton = document.querySelector('button[aria-label*="ファイル"], button[aria-label*="追加"]');
+    const toolsButton = document.querySelector('button[aria-label*="ツール"], button[aria-label*="Tool"]');
+    const insertAfter = toolsButton || (addButton && addButton.nextElementSibling);
+    if (insertAfter) {
+      insertAfter.parentElement.insertBefore(wrapper, insertAfter.nextSibling);
+    } else {
+      const inputArea = document.querySelector('div[contenteditable="true"][role="textbox"]');
+      if (inputArea) {
+        const parent = inputArea.closest('form') || inputArea.parentElement?.parentElement;
+        if (parent) {
+          parent.insertBefore(wrapper, parent.firstChild);
+        } else {
+          document.body.appendChild(wrapper);
+        }
+      } else {
+        document.body.appendChild(wrapper);
+      }
+    }
+
+    const savedModeId = r.currentDeepDiveModeId;
+    if (savedModeId && modes.some(m => m.id === savedModeId)) {
+      select.value = savedModeId;
+    } else if (modes.length > 0) {
+      select.value = modes[0].id;
+    }
+  });
 }
 
 // Initialize deep dive functionality
 function initializeDeepDive() {
   // Add styles
   addDeepDiveStyles();
+
+  // Inject mode selector (wait for input area buttons to appear)
+  const tryInjectModeSelector = () => {
+    const hasButtons = document.querySelector('button[aria-label*="ツール"], button[aria-label*="Tool"], button[aria-label*="ファイル"], button[aria-label*="追加"]');
+    if (hasButtons || document.querySelector('div[contenteditable="true"][role="textbox"]')) {
+      injectModeSelector();
+    } else {
+      setTimeout(tryInjectModeSelector, 500);
+    }
+  };
+  tryInjectModeSelector();
+
+  // Update dropdown when modes change in options (only on Gemini chat page)
+  chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'sync' && (changes.deepDiveModes || changes.currentDeepDiveModeId) &&
+        location.href.includes('gemini.google.com') &&
+        document.querySelector('button[aria-label*="ツール"], button[aria-label*="Tool"], div[contenteditable="true"][role="textbox"]')) {
+      injectModeSelector();
+    }
+  });
 
   // Watch for new responses
   const observer = new MutationObserver((mutations) => {
