@@ -14,9 +14,8 @@ A Chrome extension that enhances Google Gemini Web UI with keyboard shortcuts, c
 - **Deep dive into responses** - Explore topics in detail with inline buttons
 - Autocomplete for faster input
 - DOM structure analysis for AI developers
-- **Context menu integration** - Right-click on selected text to send to Gemini
-- **URL query parameter** - Open Gemini with pre-filled questions via URL (`?q=...`)
 - **Conversation map** - Fixed right-side panel showing the outline of the current chat with scroll-position highlight
+- **URL query parameter** - Open Gemini with pre-filled questions via URL (`?q=...`)
 
 ## Keyboard Shortcuts
 

@@ -1,33 +1,5 @@
 // Settings management
 
-// Default context menu items (presets)
-const DEFAULT_CONTEXT_MENU_ITEMS = [
-  {
-    id: 'preset-1',
-    title: 'Geminiに質問: "%s"',
-    prompt: '{{text}}',
-    enabled: true
-  },
-  {
-    id: 'preset-2',
-    title: 'Geminiで説明',
-    prompt: '次のテキストを説明してください：\n\n{{text}}',
-    enabled: true
-  },
-  {
-    id: 'preset-3',
-    title: 'コードレビュー',
-    prompt: '次のコードをレビューして、改善点を指摘してください：\n\n```\n{{text}}\n```',
-    enabled: true
-  }
-];
-
-// Default context menu settings
-const DEFAULT_CONTEXT_MENU_SETTINGS = {
-  enabled: true,
-  items: DEFAULT_CONTEXT_MENU_ITEMS
-};
-
 // Default deep dive prompt (appended when clicking deep dive button without Ctrl)
 const DEFAULT_DEEP_DIVE_PROMPT = 'これについて詳しく';
 
@@ -77,7 +49,6 @@ const DEFAULT_SHORTCUTS = {
 
 // Current shortcuts (will be loaded from storage)
 let currentShortcuts = null;
-let contextMenuSettings = null;
 
 // Load shortcuts from Chrome storage
 async function loadShortcuts() {
@@ -91,40 +62,6 @@ async function loadShortcuts() {
       resolve(currentShortcuts);
     });
   });
-}
-
-// Load context menu settings
-async function loadContextMenuSettings() {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get(['contextMenuSettings'], (result) => {
-      if (result.contextMenuSettings) {
-        contextMenuSettings = result.contextMenuSettings;
-      } else {
-        contextMenuSettings = JSON.parse(JSON.stringify(DEFAULT_CONTEXT_MENU_SETTINGS));
-      }
-      resolve(contextMenuSettings);
-    });
-  });
-}
-
-// Save context menu settings
-function saveContextMenuSettings(settings) {
-  return new Promise((resolve) => {
-    chrome.storage.sync.set({ contextMenuSettings: settings }, () => {
-      contextMenuSettings = settings;
-      // Notify background script to update menus
-      chrome.runtime.sendMessage({
-        type: 'updateContextMenu',
-        enabled: settings.enabled
-      });
-      resolve();
-    });
-  });
-}
-
-// Get context menu settings
-function getContextMenuSettings() {
-  return contextMenuSettings || DEFAULT_CONTEXT_MENU_SETTINGS;
 }
 
 // Save shortcuts to Chrome storage
