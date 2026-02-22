@@ -12,9 +12,8 @@ function injectMapStyles() {
     #gemini-map-panel {
       position: fixed;
       right: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      max-height: 70vh;
+      top: 60px;
+      bottom: 16px;
       width: 240px;
       background: rgba(248, 249, 250, 0.95);
       border: 1px solid rgba(0, 0, 0, 0.1);
@@ -171,6 +170,15 @@ function setupIntersectionObserver() {
     buttons.forEach((btn, i) => {
       btn.classList.toggle('map-item-current', visibleTurns.has(i));
     });
+
+    // Auto-scroll map panel to show the first highlighted item
+    const panel = document.getElementById(MAP_PANEL_ID);
+    if (panel) {
+      const firstHighlighted = buttons.find((_, i) => visibleTurns.has(i));
+      if (firstHighlighted) {
+        firstHighlighted.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }
   }, { threshold: 0.15 });
 
   containers.forEach(c => intersectionObserver.observe(c));
