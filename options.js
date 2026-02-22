@@ -30,7 +30,7 @@ let currentChatWidth = 900;
 
 // Default deep dive modes
 const DEFAULT_DEEP_DIVE_MODES = [
-  { id: 'default', name: '標準', prompt: 'これについて詳しく' }
+  { id: 'default', prompt: 'これについて詳しく' }
 ];
 
 // Current deep dive modes
@@ -67,18 +67,16 @@ function displayDeepDiveModes() {
     const itemDiv = document.createElement('div');
     itemDiv.style.cssText = 'border: 1px solid #e0e0e0; border-radius: 4px; padding: 12px; margin-bottom: 8px; background: #fafafa; display: grid; grid-template-columns: 120px 1fr auto; gap: 12px; align-items: center;';
 
-    const nameInput = document.createElement('input');
-    nameInput.type = 'text';
-    nameInput.dataset.modeIndex = index;
-    nameInput.dataset.modeField = 'name';
-    nameInput.value = mode.name || '';
-    nameInput.placeholder = '表示名';
-    nameInput.style.cssText = 'padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px;';
+    const idInput = document.createElement('input');
+    idInput.type = 'text';
+    idInput.dataset.modeIndex = index;
+    idInput.value = mode.id || '';
+    idInput.placeholder = 'ID';
+    idInput.style.cssText = 'padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px;';
 
     const promptInput = document.createElement('input');
     promptInput.type = 'text';
     promptInput.dataset.modeIndex = index;
-    promptInput.dataset.modeField = 'prompt';
     promptInput.value = mode.prompt || '';
     promptInput.placeholder = 'プロンプト';
     promptInput.style.cssText = 'padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px;';
@@ -89,13 +87,13 @@ function displayDeepDiveModes() {
     deleteBtn.textContent = '削除';
     deleteBtn.style.cssText = 'padding: 6px 12px;';
 
-    itemDiv.appendChild(nameInput);
+    itemDiv.appendChild(idInput);
     itemDiv.appendChild(promptInput);
     itemDiv.appendChild(deleteBtn);
     container.appendChild(itemDiv);
 
-    nameInput.addEventListener('input', (e) => {
-      currentDeepDiveModes[index].name = e.target.value;
+    idInput.addEventListener('input', (e) => {
+      currentDeepDiveModes[index].id = e.target.value;
     });
     promptInput.addEventListener('input', (e) => {
       currentDeepDiveModes[index].prompt = e.target.value;
@@ -115,8 +113,8 @@ function displayDeepDiveModes() {
   addButton.textContent = '+ モードを追加';
   addButton.style.cssText = 'width: 100%; margin-top: 8px;';
   addButton.addEventListener('click', () => {
-    const newId = 'custom-' + Date.now();
-    currentDeepDiveModes.push({ id: newId, name: '新規', prompt: '' });
+    const newId = 'mode-' + Date.now();
+    currentDeepDiveModes.push({ id: newId, prompt: '' });
     displayDeepDiveModes();
   });
   container.appendChild(addButton);

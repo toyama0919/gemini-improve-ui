@@ -85,7 +85,7 @@ Explore Gemini's responses in more detail with inline deep dive buttons. Buttons
 2. **Enter or normal click:** Quotes the content + adds prompt from selected mode and auto-sends
 3. **Ctrl+Enter or Ctrl+click:** Only quotes the content, you add your own prompt
 
-**Modes:** Use the dropdown near the input to switch prompts. Configure modes in extension options (right-click icon → Options).
+**Modes:** Use the dropdown near the input to switch prompts. Add `?mode_id=xxx` to the URL to specify mode. Configure in extension options.
 
 **Fine-grained selection:**
 

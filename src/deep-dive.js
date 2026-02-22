@@ -2,7 +2,7 @@
 
 // Default modes (fallback when not in storage)
 const DEFAULT_DEEP_DIVE_MODES = [
-  { id: 'default', name: '標準', prompt: 'これについて詳しく' }
+  { id: 'default', prompt: 'これについて詳しく' }
 ];
 
 // Add deep dive buttons to response sections
@@ -434,7 +434,10 @@ async function insertDeepDiveQuery(target, quoteOnly = false) {
     const modes = (result.deepDiveModes && result.deepDiveModes.length > 0)
       ? result.deepDiveModes
       : DEFAULT_DEEP_DIVE_MODES;
-    const modeId = result.currentDeepDiveModeId || modes[0]?.id;
+    const urlParams = new URLSearchParams(location.search);
+    const urlModeId = urlParams.get('mode_id');
+    let modeId = urlModeId || result.currentDeepDiveModeId || modes[0]?.id;
+    if (!modes.some(m => m.id === modeId)) modeId = modes[0]?.id;
     const mode = modes.find(m => m.id === modeId) || modes[0] || DEFAULT_DEEP_DIVE_MODES[0];
     query = quotedContent + '\n\n' + (mode.prompt || 'これについて詳しく');
     shouldAutoSend = true;
@@ -613,7 +616,7 @@ function injectModeSelector() {
     modes.forEach(mode => {
       const option = document.createElement('option');
       option.value = mode.id;
-      option.textContent = mode.name || mode.id;
+      option.textContent = mode.id;
       select.appendChild(option);
     });
 
@@ -643,9 +646,16 @@ function injectModeSelector() {
       }
     }
 
-    const savedModeId = r.currentDeepDiveModeId;
-    if (savedModeId && modes.some(m => m.id === savedModeId)) {
-      select.value = savedModeId;
+    // URL param ?mode_id=xxx takes precedence
+    const urlParams = new URLSearchParams(location.search);
+    const urlModeId = urlParams.get('mode_id');
+    let modeId = r.currentDeepDiveModeId;
+    if (urlModeId && modes.some(m => m.id === urlModeId)) {
+      modeId = urlModeId;
+      chrome.storage.sync.set({ currentDeepDiveModeId: urlModeId });
+    }
+    if (modeId && modes.some(m => m.id === modeId)) {
+      select.value = modeId;
     } else if (modes.length > 0) {
       select.value = modes[0].id;
     }
