@@ -678,9 +678,9 @@ function initializeDeepDive() {
   };
   tryInjectModeSelector();
 
-  // Update dropdown when modes change in options (only on Gemini chat page)
+  // Update dropdown only when modes list changes in options (not on mode switch - that would remove/recreate dropdown)
   chrome.storage.onChanged.addListener((changes, namespace) => {
-    if (namespace === 'sync' && (changes.deepDiveModes || changes.currentDeepDiveModeId) &&
+    if (namespace === 'sync' && changes.deepDiveModes &&
         location.href.includes('gemini.google.com') &&
         document.querySelector('button[aria-label*="ツール"], button[aria-label*="Tool"], div[contenteditable="true"][role="textbox"]')) {
       injectModeSelector();
