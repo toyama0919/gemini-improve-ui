@@ -26,6 +26,7 @@
         "src/dom-analyzer.js",
         "src/deep-dive.js",
         "src/keyboard.js",
+        "src/export.js",
         "src/content.js"
       ],
       "run_at": "document_end"

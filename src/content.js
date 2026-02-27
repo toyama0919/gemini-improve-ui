@@ -97,6 +97,12 @@ function initialize() {
         if (!isSearchPage() && typeof showMap === 'function') {
           showMap();
         }
+        // Re-create export button on navigation
+        const existingBtn = document.getElementById('gemini-export-note-button');
+        if (existingBtn) existingBtn.remove();
+        if (typeof initializeExport === 'function') {
+          initializeExport();
+        }
       }, 1500);
     }
   }).observe(document, { subtree: true, childList: true });
@@ -116,6 +122,12 @@ function initialize() {
     if (typeof initializeDeepDive === 'function') {
       initializeDeepDive();
     }
+    // Initialize export button
+    setTimeout(() => {
+      if (typeof initializeExport === 'function') {
+        initializeExport();
+      }
+    }, 1500);
     // Show map panel on load
     setTimeout(() => {
       if (typeof showMap === 'function') showMap();

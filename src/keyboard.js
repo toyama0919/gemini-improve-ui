@@ -100,6 +100,15 @@ function handleChatPageKeydown(event) {
     }
   }
 
+  // Home: Save chat as Zettelkasten note
+  if (event.code === 'Home' && !event.metaKey && !event.ctrlKey && !isInInput) {
+    event.preventDefault();
+    if (typeof saveNote === 'function') {
+      saveNote(event.shiftKey);
+    }
+    return true;
+  }
+
   // Ctrl+Shift+D: Copy DOM structure for AI analysis
   if (event.ctrlKey && event.shiftKey && event.code === 'KeyD') {
     event.preventDefault();
