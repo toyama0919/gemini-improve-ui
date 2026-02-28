@@ -94,6 +94,27 @@ function cleanModelText(text) {
     .trim();
 }
 
+// --- Scroll to load all messages ---
+
+async function loadAllMessages() {
+  const scroller = document.querySelector('infinite-scroller.chat-history');
+  if (!scroller) return;
+
+  showExportNotification('メッセージを読み込み中...');
+
+  let prevCount = 0;
+  for (let i = 0; i < 30; i++) {
+    scroller.scrollTop = 0;
+    await new Promise(r => setTimeout(r, 400));
+    const count = document.querySelectorAll('user-query').length;
+    if (count === prevCount) break;
+    prevCount = count;
+  }
+
+  // Scroll back to bottom after loading
+  scroller.scrollTop = scroller.scrollHeight;
+}
+
 // --- Chat content extraction ---
 
 function extractChatContent() {
@@ -165,6 +186,8 @@ function generateMarkdown(turns) {
 // --- File save ---
 
 async function saveNote(forcePickDir = false) {
+  await loadAllMessages();
+
   const turns = extractChatContent();
   if (turns.length === 0) {
     showExportNotification('保存できる会話が見つかりません', 'error');
