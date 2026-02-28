@@ -78,7 +78,6 @@ start_chrome() {
     "--remote-debugging-port=${CHROME_DEBUG_PORT}"
     "--user-data-dir=${CHROME_USER_DIR}"
     "--load-extension=$(pwd)"
-    "--disable-extensions-except=$(pwd)"
   )
   
   if [ "$HEADLESS" = true ]; then
