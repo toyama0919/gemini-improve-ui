@@ -6,7 +6,7 @@ CHROME_DEBUG_PORT=9222
 CHROME_USER_DIR="$(pwd)/.chrome-devtools-mcp"
 CHROME_BINARY="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 PID_FILE="${CHROME_USER_DIR}/.chrome-debug.pid"
-TEST_CHAT_URL="https://gemini.google.com/app/6cbdc99490e24d7e"
+TEST_CHAT_URL="https://gemini.google.com/app/337b024810e896b8"
 
 # Colors
 GREEN='\033[0;32m'
@@ -34,7 +34,7 @@ start_chrome() {
   local FOREGROUND=false
   local OPEN_TEST_CHAT=false
   local HEADLESS=false
-  
+
   while [[ $# -gt 0 ]]; do
     case $1 in
       --fg|--foreground)
@@ -59,12 +59,12 @@ start_chrome() {
 
   if check_debug_chrome; then
     echo -e "${GREEN}Debug Chrome is already running on port ${CHROME_DEBUG_PORT}${NC}"
-    
+
     if [ "$OPEN_TEST_CHAT" = true ]; then
       echo -e "${YELLOW}Opening test chat URL...${NC}"
       open "${TEST_CHAT_URL}"
     fi
-    
+
     exit 0
   fi
 
@@ -79,11 +79,11 @@ start_chrome() {
     "--user-data-dir=${CHROME_USER_DIR}"
     "--load-extension=$(pwd)"
   )
-  
+
   if [ "$HEADLESS" = true ]; then
     CHROME_ARGS+=("--headless=new")
   fi
-  
+
   if [ "$OPEN_TEST_CHAT" = true ]; then
     CHROME_ARGS+=("${TEST_CHAT_URL}")
   fi
