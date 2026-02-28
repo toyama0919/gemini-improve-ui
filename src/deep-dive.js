@@ -193,6 +193,15 @@ function addDeepDiveButton(target) {
     insertDeepDiveQuery(target, isCtrlPressed);
   });
 
+  // Cmd+Right: show template popup
+  button.addEventListener('keydown', (e) => {
+    if (e.altKey && e.key === 'ArrowRight') {
+      e.preventDefault();
+      e.stopPropagation();
+      showTemplatePopup(button, target);
+    }
+  });
+
   // Create expand button for sections and lists
   let expandButton = null;
   if (target.type === 'section' || target.type === 'list') {
@@ -368,18 +377,26 @@ function addChildButton(element) {
   
   button.appendChild(svg);
   
+  const childTarget = {
+    type: 'child',
+    element: element,
+    getContent: () => element.textContent.trim()
+  };
+
   // Add click handler
   button.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    const isCtrlPressed = e.ctrlKey;
-    const childTarget = {
-      type: 'child',
-      element: element,
-      getContent: () => element.textContent.trim()
-    };
-    insertDeepDiveQuery(childTarget, isCtrlPressed);
+    insertDeepDiveQuery(childTarget, e.ctrlKey);
+  });
+
+  // Cmd+Right: show template popup
+  button.addEventListener('keydown', (e) => {
+    if (e.altKey && e.key === 'ArrowRight') {
+      e.preventDefault();
+      e.stopPropagation();
+      showTemplatePopup(button, childTarget);
+    }
   });
   
   element.appendChild(button);
@@ -410,10 +427,148 @@ function collapseChildButtons(target) {
   }
 }
 
-// Insert deep dive query into textarea
-async function insertDeepDiveQuery(target, quoteOnly = false) {
+// Show template selection popup near the focused button
+async function showTemplatePopup(button, target) {
+  hideTemplatePopup();
+
+  const result = await new Promise((resolve) => {
+    chrome.storage.sync.get(['deepDiveModes', 'currentDeepDiveModeId'], resolve);
+  });
+  const modes = (result.deepDiveModes && result.deepDiveModes.length > 0)
+    ? result.deepDiveModes
+    : DEFAULT_DEEP_DIVE_MODES;
+
+  const popup = document.createElement('div');
+  popup.className = 'deep-dive-template-popup';
+  popup.id = 'deep-dive-template-popup';
+  popup.setAttribute('role', 'menu');
+
+  // Helper: build one menu item
+  const makeItem = (label, hint, onClick) => {
+    const item = document.createElement('button');
+    item.className = 'deep-dive-template-item';
+    item.setAttribute('role', 'menuitem');
+    item.textContent = label;
+    if (hint) item.title = hint;
+    item.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      hideTemplatePopup();
+      onClick();
+    });
+    return item;
+  };
+
+  modes.forEach(mode => {
+    popup.appendChild(makeItem(
+      mode.id,
+      mode.prompt || '',
+      () => doInsertQuery(target, mode)
+    ));
+  });
+
+  document.body.appendChild(popup);
+
+  // Position: below the button, aligned to its left edge
+  const rect = button.getBoundingClientRect();
+  const popupW = 160;
+  let left = rect.left + window.scrollX;
+  // Keep inside viewport
+  if (left + popupW > window.innerWidth - 8) {
+    left = window.innerWidth - popupW - 8;
+  }
+  popup.style.top = `${rect.bottom + window.scrollY + 4}px`;
+  popup.style.left = `${left}px`;
+
+  // Keyboard navigation
+  const items = Array.from(popup.querySelectorAll('.deep-dive-template-item'));
+  let focusIndex = 0;
+  items[0]?.focus();
+
+  popup.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' || (e.altKey && e.key === 'ArrowLeft')) {
+      e.preventDefault();
+      hideTemplatePopup();
+      button.focus();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      focusIndex = (focusIndex + 1) % items.length;
+      items[focusIndex].focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      focusIndex = (focusIndex - 1 + items.length) % items.length;
+      items[focusIndex].focus();
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      if (e.shiftKey) {
+        focusIndex = (focusIndex - 1 + items.length) % items.length;
+      } else {
+        focusIndex = (focusIndex + 1) % items.length;
+      }
+      items[focusIndex].focus();
+    }
+  });
+
+  // Close on outside click
+  setTimeout(() => {
+    document.addEventListener('click', hideTemplatePopup, { once: true });
+  }, 0);
+}
+
+function hideTemplatePopup() {
+  const existing = document.getElementById('deep-dive-template-popup');
+  if (existing) existing.remove();
+}
+
+// Shared DOM writer: insert query text into textarea and optionally auto-send
+function writeToTextarea(query, autoSend) {
   const textarea = document.querySelector('div[contenteditable="true"][role="textbox"]');
   if (!textarea) return;
+
+  while (textarea.firstChild) textarea.removeChild(textarea.firstChild);
+
+  query.split('\n').forEach((line) => {
+    const p = document.createElement('p');
+    if (line.trim() === '') {
+      p.appendChild(document.createElement('br'));
+    } else {
+      p.textContent = line;
+    }
+    textarea.appendChild(p);
+  });
+
+  textarea.focus();
+  const range = document.createRange();
+  const sel = window.getSelection();
+  range.selectNodeContents(textarea);
+  range.collapse(false);
+  sel.removeAllRanges();
+  sel.addRange(range);
+  textarea.dispatchEvent(new Event('input', { bubbles: true }));
+
+  if (autoSend) {
+    setTimeout(() => {
+      const sendButton = document.querySelector('button[aria-label*="送信"], button[aria-label*="Send"]');
+      if (sendButton && !sendButton.disabled) sendButton.click();
+    }, 100);
+  }
+}
+
+// Insert with an explicitly chosen mode (called from template popup)
+function doInsertQuery(target, mode) {
+  const content = target.getContent();
+  const quotedContent = content.split('\n').map(line => `> ${line}`).join('\n');
+  const query = quotedContent + '\n\n' + (mode.prompt || 'これについて詳しく');
+  writeToTextarea(query, true);
+}
+
+// Insert deep dive query into textarea
+async function insertDeepDiveQuery(target, quoteOnly = false) {
+  if (!document.querySelector('div[contenteditable="true"][role="textbox"]')) return;
 
   // Get quoted content
   const content = target.getContent();
@@ -443,44 +598,7 @@ async function insertDeepDiveQuery(target, quoteOnly = false) {
     shouldAutoSend = true;
   }
 
-  // Clear textarea
-  while (textarea.firstChild) {
-    textarea.removeChild(textarea.firstChild);
-  }
-
-  // Insert query (preserve line breaks)
-  const lines = query.split('\n');
-  lines.forEach((line, index) => {
-    const p = document.createElement('p');
-    if (line.trim() === '') {
-      p.appendChild(document.createElement('br'));
-    } else {
-      p.textContent = line;
-    }
-    textarea.appendChild(p);
-  });
-
-  // Focus and move cursor to end
-  textarea.focus();
-  const range = document.createRange();
-  const sel = window.getSelection();
-  range.selectNodeContents(textarea);
-  range.collapse(false);
-  sel.removeAllRanges();
-  sel.addRange(range);
-
-  // Dispatch input event
-  textarea.dispatchEvent(new Event('input', { bubbles: true }));
-  
-  // Auto-send when prompt is set (not in quote-only mode and prompt is not empty)
-  if (shouldAutoSend) {
-    setTimeout(() => {
-      const sendButton = document.querySelector('button[aria-label*="送信"], button[aria-label*="Send"]');
-      if (sendButton && !sendButton.disabled) {
-        sendButton.click();
-      }
-    }, 100);
-  }
+  writeToTextarea(query, shouldAutoSend);
 }
 
 // Add styles for deep dive buttons and menu
@@ -588,6 +706,44 @@ function addDeepDiveStyles() {
       border-color: #1a73e8;
       color: #1a73e8;
     }
+
+    /* Template selection popup (Cmd+Right on focused button) */
+    .deep-dive-template-popup {
+      position: absolute;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      min-width: 160px;
+      padding: 4px 0;
+      background: #fff;
+      border: 1px solid #dadce0;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      outline: none;
+    }
+
+    .deep-dive-template-item {
+      display: block;
+      width: 100%;
+      padding: 7px 14px;
+      border: none;
+      background: transparent;
+      text-align: left;
+      font-size: 13px;
+      color: #3c4043;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .deep-dive-template-item:hover,
+    .deep-dive-template-item:focus {
+      background: #f1f3f4;
+      color: #1a73e8;
+      outline: none;
+    }
+
   `;
   
   document.head.appendChild(style);
