@@ -7,7 +7,7 @@ CHROME_USER_DIR="$(pwd)/.chrome-devtools-mcp"
 CHROME_BINARY="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 PID_FILE="${CHROME_USER_DIR}/.chrome-debug.pid"
 TEST_CHAT_URL="https://gemini.google.com/app/337b024810e896b8"
-EXTENSION_DIR="$(pwd)/.output/chrome-mv3"
+EXTENSION_DIR="$(pwd)/dist/chrome-mv3"
 
 # Colors
 GREEN='\033[0;32m'

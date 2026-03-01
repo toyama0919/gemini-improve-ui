@@ -13,6 +13,7 @@ export default defineConfig({
     ],
   },
   extensionApi: 'chrome',
+  outDir: 'dist',
   runner: {
     binaries: {
       chrome: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',

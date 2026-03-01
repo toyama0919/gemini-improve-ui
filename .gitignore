@@ -9,6 +9,9 @@ node_modules/
 # WXT internal (generated types, cache)
 .wxt/
 
+# Old output dir (replaced by dist/)
+.output/
+
 # OS generated files
 .DS_Store
 .DS_Store?
