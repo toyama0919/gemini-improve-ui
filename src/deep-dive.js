@@ -432,11 +432,22 @@ async function showTemplatePopup(button, target) {
   hideTemplatePopup();
 
   const result = await new Promise((resolve) => {
-    chrome.storage.sync.get(['deepDiveModes', 'currentDeepDiveModeId'], resolve);
+    chrome.storage.sync.get(['deepDiveModes', 'currentDeepDiveModeId', 'deepDiveRecentModes'], resolve);
   });
   const modes = (result.deepDiveModes && result.deepDiveModes.length > 0)
     ? result.deepDiveModes
     : DEFAULT_DEEP_DIVE_MODES;
+
+  // Sort by recent usage: recently used IDs float to the top
+  const recentIds = result.deepDiveRecentModes || [];
+  const sorted = [...modes].sort((a, b) => {
+    const ai = recentIds.indexOf(a.id);
+    const bi = recentIds.indexOf(b.id);
+    if (ai === -1 && bi === -1) return 0;
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
 
   const popup = document.createElement('div');
   popup.className = 'deep-dive-template-popup';
@@ -463,7 +474,7 @@ async function showTemplatePopup(button, target) {
     return item;
   };
 
-  modes.forEach(mode => {
+  sorted.forEach(mode => {
     popup.appendChild(makeItem(
       mode.id,
       mode.prompt || '',
@@ -564,6 +575,13 @@ function doInsertQuery(target, mode) {
   const quotedContent = content.split('\n').map(line => `> ${line}`).join('\n');
   const query = quotedContent + '\n\n' + (mode.prompt || 'これについて詳しく');
   writeToTextarea(query, true);
+
+  // Record recent usage (most recent first, max 20)
+  chrome.storage.sync.get(['deepDiveRecentModes'], (r) => {
+    const recent = (r.deepDiveRecentModes || []).filter(id => id !== mode.id);
+    recent.unshift(mode.id);
+    chrome.storage.sync.set({ deepDiveRecentModes: recent.slice(0, 20) });
+  });
 }
 
 // Insert deep dive query into textarea
