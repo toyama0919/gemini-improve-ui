@@ -72,6 +72,97 @@ async function getExportDirHandle(): Promise<FileSystemDirectoryHandle> {
   return exportDirHandle;
 }
 
+// --- DOM to Markdown conversion ---
+
+function domToMarkdown(el: HTMLElement): string {
+  const SKIP_TAGS = new Set(['button', 'svg', 'path', 'mat-icon']);
+
+  function nodeToMd(node: Node): string {
+    if (node.nodeType === Node.TEXT_NODE) return node.textContent || '';
+    if (node.nodeType !== Node.ELEMENT_NODE) return '';
+
+    const elem = node as HTMLElement;
+    const tag = elem.tagName.toLowerCase();
+
+    if (SKIP_TAGS.has(tag)) return '';
+
+    const inner = () => Array.from(elem.childNodes).map(nodeToMd).join('');
+
+    const hm = tag.match(/^h([1-6])$/);
+    if (hm) {
+      const hashes = '#'.repeat(Number(hm[1]));
+      const text = inner().trim();
+      return `\n${hashes} ${text}\n\n`;
+    }
+
+    switch (tag) {
+      case 'p':
+        return inner() + '\n\n';
+      case 'br':
+        return '\n';
+      case 'hr':
+        return '\n---\n\n';
+      case 'ul':
+      case 'ol':
+        return inner() + '\n';
+      case 'li': {
+        const content = inner().replace(/\n+$/, '');
+        return `- ${content}\n`;
+      }
+      case 'b':
+      case 'strong':
+        return `**${inner()}**`;
+      case 'i':
+      case 'em':
+        return `*${inner()}*`;
+      case 'code':
+        return `\`${inner()}\``;
+      case 'pre':
+        return `\`\`\`\n${inner()}\n\`\`\`\n\n`;
+      case 'table':
+        return tableToMd(elem) + '\n\n';
+      case 'thead':
+      case 'tbody':
+      case 'tr':
+      case 'td':
+      case 'th':
+        return '';
+      default:
+        return inner();
+    }
+  }
+
+  function tableToMd(table: HTMLElement): string {
+    const rows = Array.from(table.querySelectorAll('tr'));
+    if (rows.length === 0) return '';
+
+    const getCells = (row: Element) =>
+      Array.from(row.querySelectorAll('td, th')).map((cell) =>
+        Array.from(cell.childNodes)
+          .map(nodeToMd)
+          .join('')
+          .replace(/\n+/g, ' ')
+          .trim()
+      );
+
+    const [headerRow, ...bodyRows] = rows;
+    const headers = getCells(headerRow);
+    const separator = headers.map(() => '---');
+
+    return [
+      `| ${headers.join(' | ')} |`,
+      `| ${separator.join(' | ')} |`,
+      ...bodyRows.map((r) => `| ${getCells(r).join(' | ')} |`),
+    ].join('\n');
+  }
+
+  return Array.from(el.childNodes)
+    .map(nodeToMd)
+    .join('')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 // --- Text cleanup ---
 
 const ARTIFACT_PATTERNS = [
@@ -134,11 +225,12 @@ function extractChatContent(): Turn[] {
       .filter(Boolean)
       .join('\n');
 
-    const rawModelText = (
-      modelResponses[i].querySelector(
-        'message-content .markdown'
-      ) as HTMLElement | null
-    )?.innerText?.trim();
+    const markdownEl = modelResponses[i].querySelector(
+      'message-content .markdown'
+    ) as HTMLElement | null;
+    const rawModelText = markdownEl
+      ? domToMarkdown(markdownEl).trim()
+      : undefined;
     const modelText = rawModelText ? cleanModelText(rawModelText) : '';
 
     if (userText || modelText) {
@@ -153,7 +245,18 @@ function getChatId(): string {
   return location.pathname.split('/').pop() || 'unknown';
 }
 
-// --- Markdown generation (Zettelkasten format) ---
+// --- YAML generation (Zettelkasten format) ---
+
+function yamlQuote(s: string): string {
+  return '"' + s.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+}
+
+function yamlBlock(text: string, indent: string): string {
+  return text
+    .split('\n')
+    .map((line) => (line === '' ? '' : indent + line))
+    .join('\n');
+}
 
 function generateMarkdown(turns: Turn[]): {
   markdown: string;
@@ -182,27 +285,25 @@ function generateMarkdown(turns: Turn[]): {
   const title = (conversationTitle || fallbackTitle).slice(0, 60);
 
   const chatId = getChatId();
-  const frontmatter = [
-    '---',
-    `id: ${chatId}`,
-    `title: "Gemini: ${title}"`,
-    `date: ${timeStr}`,
-    `source: ${location.href}`,
-    'tags: [gemini, fleeting]',
-    '---',
-  ].join('\n');
+  const lines: string[] = [
+    `id: ${yamlQuote(chatId)}`,
+    `title: ${yamlQuote('Gemini: ' + title)}`,
+    `date: ${yamlQuote(timeStr)}`,
+    `source: ${yamlQuote(location.href)}`,
+    'tags:',
+    '  - gemini',
+    '  - fleeting',
+    'turns:',
+  ];
 
-  const sections = [frontmatter];
   for (const turn of turns) {
-    sections.push('');
-    sections.push(`**Q:** ${turn.user}`);
-    sections.push('');
-    sections.push(`**A:** ${turn.model}`);
-    sections.push('');
-    sections.push('---');
+    lines.push('  - q: |');
+    lines.push(yamlBlock(turn.user, '      '));
+    lines.push('    a: |');
+    lines.push(yamlBlock(turn.model, '      '));
   }
 
-  return { markdown: sections.join('\n'), id, title };
+  return { markdown: lines.join('\n'), id, title };
 }
 
 // --- File save ---
@@ -237,7 +338,7 @@ export async function saveNote(forcePickDir = false): Promise<void> {
     .replace(/[\\/:*?"<>|]/g, '')
     .replace(/\s+/g, '-')
     .slice(0, 40);
-  const filename = `gemini-${safeTitle}-${chatId}.md`;
+  const filename = `gemini-${safeTitle}-${chatId}.yaml`;
 
   try {
     const inboxHandle = await dirHandle.getDirectoryHandle('inbox', {
