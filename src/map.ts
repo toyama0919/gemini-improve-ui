@@ -4,7 +4,7 @@ let mapMode = false;
 const MAP_PANEL_ID = 'gemini-map-panel';
 const MAP_STYLE_ID = 'gemini-map-styles';
 
-function injectMapStyles() {
+function injectMapStyles(): void {
   if (document.getElementById(MAP_STYLE_ID)) return;
   const style = document.createElement('style');
   style.id = MAP_STYLE_ID;
@@ -77,21 +77,26 @@ function injectMapStyles() {
   document.head.appendChild(style);
 }
 
-function getPromptText(userQuery) {
+function getPromptText(userQuery: Element): string {
   const heading = userQuery.querySelector('h1, h2, h3, [role="heading"]');
-  let text = heading?.textContent?.trim() || userQuery.textContent?.trim() || '';
+  let text =
+    (heading as HTMLElement)?.textContent?.trim() ||
+    (userQuery as HTMLElement).textContent?.trim() ||
+    '';
   text = text.replace(/^あなたのプロンプト\s*/, '');
   text = text.replace(/^>\s*/, '');
   return text.substring(0, 60) || '(空)';
 }
 
-function getConversationContainers() {
-  return Array.from(document.querySelectorAll(
-    'infinite-scroller.chat-history > .conversation-container'
-  ));
+function getConversationContainers(): HTMLElement[] {
+  return Array.from(
+    document.querySelectorAll<HTMLElement>(
+      'infinite-scroller.chat-history > .conversation-container'
+    )
+  );
 }
 
-function buildMapPanel() {
+function buildMapPanel(): HTMLDivElement {
   const panel = document.createElement('div');
   panel.id = MAP_PANEL_ID;
 
@@ -138,53 +143,54 @@ function buildMapPanel() {
   return panel;
 }
 
-function getMapButtons() {
+function getMapButtons(): HTMLButtonElement[] {
   const panel = document.getElementById(MAP_PANEL_ID);
   if (!panel) return [];
-  return Array.from(panel.querySelectorAll('li button'));
+  return Array.from(panel.querySelectorAll<HTMLButtonElement>('li button'));
 }
 
-// IntersectionObserver: highlight map items for currently visible chat turns
-let intersectionObserver = null;
-const visibleTurns = new Set();
+let intersectionObserver: IntersectionObserver | null = null;
+const visibleTurns = new Set<number>();
 
-function setupIntersectionObserver() {
+function setupIntersectionObserver(): void {
   if (intersectionObserver) intersectionObserver.disconnect();
   visibleTurns.clear();
 
   const containers = getConversationContainers();
   if (containers.length === 0) return;
 
-  intersectionObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      const index = containers.indexOf(entry.target);
-      if (index === -1) return;
-      if (entry.isIntersecting) {
-        visibleTurns.add(index);
-      } else {
-        visibleTurns.delete(index);
+  intersectionObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        const index = containers.indexOf(entry.target as HTMLElement);
+        if (index === -1) return;
+        if (entry.isIntersecting) {
+          visibleTurns.add(index);
+        } else {
+          visibleTurns.delete(index);
+        }
+      });
+
+      const buttons = getMapButtons();
+      buttons.forEach((btn, i) => {
+        btn.classList.toggle('map-item-current', visibleTurns.has(i));
+      });
+
+      const panel = document.getElementById(MAP_PANEL_ID);
+      if (panel) {
+        const firstHighlighted = buttons.find((_, i) => visibleTurns.has(i));
+        if (firstHighlighted) {
+          firstHighlighted.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
       }
-    });
+    },
+    { threshold: 0.15 }
+  );
 
-    const buttons = getMapButtons();
-    buttons.forEach((btn, i) => {
-      btn.classList.toggle('map-item-current', visibleTurns.has(i));
-    });
-
-    // Auto-scroll map panel to show the first highlighted item
-    const panel = document.getElementById(MAP_PANEL_ID);
-    if (panel) {
-      const firstHighlighted = buttons.find((_, i) => visibleTurns.has(i));
-      if (firstHighlighted) {
-        firstHighlighted.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      }
-    }
-  }, { threshold: 0.15 });
-
-  containers.forEach(c => intersectionObserver.observe(c));
+  containers.forEach((c) => intersectionObserver!.observe(c));
 }
 
-function stopIntersectionObserver() {
+function stopIntersectionObserver(): void {
   if (intersectionObserver) {
     intersectionObserver.disconnect();
     intersectionObserver = null;
@@ -192,35 +198,33 @@ function stopIntersectionObserver() {
   visibleTurns.clear();
 }
 
-// MutationObserver: auto-refresh map when new chat turns are added
-let chatObserver = null;
+let chatObserver: MutationObserver | null = null;
 
-function startChatObserver() {
+function startChatObserver(): void {
   if (chatObserver) chatObserver.disconnect();
 
   const chatHistory = document.querySelector('infinite-scroller.chat-history');
   if (!chatHistory) return;
 
-  let debounceTimer = null;
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   chatObserver = new MutationObserver(() => {
     if (!mapMode) return;
-    clearTimeout(debounceTimer);
+    if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => refreshMap(), 300);
   });
 
   chatObserver.observe(chatHistory, { childList: true, subtree: false });
 }
 
-function stopChatObserver() {
+function stopChatObserver(): void {
   if (chatObserver) {
     chatObserver.disconnect();
     chatObserver = null;
   }
 }
 
-// Rebuild map panel, preserving scroll position
-function refreshMap() {
+function refreshMap(): void {
   if (!mapMode) return;
 
   const existing = document.getElementById(MAP_PANEL_ID);
@@ -236,8 +240,7 @@ function refreshMap() {
   setupIntersectionObserver();
 }
 
-
-function showMap() {
+export function showMap(): void {
   injectMapStyles();
 
   const existing = document.getElementById(MAP_PANEL_ID);
@@ -251,8 +254,7 @@ function showMap() {
   startChatObserver();
 }
 
-// Reset map state on navigation (called from content.js on URL change)
-function resetMapMode() {
+export function resetMapMode(): void {
   stopChatObserver();
   stopIntersectionObserver();
   const panel = document.getElementById(MAP_PANEL_ID);

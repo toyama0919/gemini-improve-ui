@@ -3,8 +3,11 @@
 agent-chrome-profile/
 *-chrome-profile/
 
-# Node modules (if any)
+# Node modules
 node_modules/
+
+# WXT internal (generated types, cache)
+.wxt/
 
 # OS generated files
 .DS_Store

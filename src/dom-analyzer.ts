@@ -1,115 +1,120 @@
 // DOM構造をAIエージェントが認識できる形式で出力
 
+type ElementType =
+  | 'textarea'
+  | 'sidebar'
+  | 'sidebarToggle'
+  | 'chatHistory'
+  | 'newChatButton'
+  | 'copyButtons'
+  | 'chatContainer';
+
+interface FindElementResult {
+  element: Element | null;
+  selector: string | null;
+}
+
+interface InteractiveElement {
+  index: number;
+  type: string;
+  role: string;
+  ariaLabel: string;
+  text: string;
+  description: string;
+  isVisible: boolean;
+  position: { x: number; y: number };
+}
+
 class DOMAnalyzer {
+  private elementSelectors: Record<ElementType, string[]>;
+
   constructor() {
-    // 複数のセレクター候補を安定性順に保持
     this.elementSelectors = {
       textarea: [
         '[role="textbox"][contenteditable="true"]',
         '[aria-label*="プロンプト"]',
         '.ql-editor.textarea',
-        'rich-textarea [contenteditable="true"]'
+        'rich-textarea [contenteditable="true"]',
       ],
       sidebar: [
         '[role="navigation"]',
         'bard-sidenav',
         '.side-nav-container',
-        'aside'
+        'aside',
       ],
       sidebarToggle: [
         'button[aria-label*="メインメニュー"]',
         'button[aria-label*="Main menu"]',
-        'button[data-test-id="side-nav-menu-button"]'
+        'button[data-test-id="side-nav-menu-button"]',
       ],
       chatHistory: [
         '.conversation[role="button"]',
         '[data-test-id="conversation"]',
-        '.conversation-items-container .conversation'
+        '.conversation-items-container .conversation',
       ],
       newChatButton: [
         'a[href="https://gemini.google.com/app"]',
         'a[aria-label*="新規作成"]',
-        '[data-test-id="new-chat-button"]'
+        '[data-test-id="new-chat-button"]',
       ],
       copyButtons: [
         'button[aria-label*="コピー"]',
         'button[aria-label*="Copy"]',
-        '.copy-button'
+        '.copy-button',
       ],
       chatContainer: [
         'chat-window',
         'main.main',
-        '.conversation-container'
-      ]
+        '.conversation-container',
+      ],
     };
   }
 
-  // 最初にマッチするセレクターで要素を取得
-  findElement(type) {
+  findElement(type: ElementType): FindElementResult {
     const selectors = this.elementSelectors[type] || [];
-    
     for (const selector of selectors) {
       try {
         const element = document.querySelector(selector);
-        if (element) {
-          console.log(`[DOMAnalyzer] Found ${type} with selector: ${selector}`);
-          return { element, selector };
-        }
+        if (element) return { element, selector };
       } catch (e) {
-        console.warn(`[DOMAnalyzer] Invalid selector: ${selector}`, e);
+        // Invalid selector, skip
       }
     }
-    
-    console.warn(`[DOMAnalyzer] Could not find element type: ${type}`);
     return { element: null, selector: null };
   }
 
-  // 全要素を検索して利用可能なセレクターを返す
-  findAllElements() {
-    const result = {};
-    
+  findAllElements(): Record<ElementType, FindElementResult> {
+    const result = {} as Record<ElementType, FindElementResult>;
     for (const type in this.elementSelectors) {
-      result[type] = this.findElement(type);
+      result[type as ElementType] = this.findElement(type as ElementType);
     }
-    
     return result;
   }
 
-  // ページの構造をAI向けに出力
   capturePageStructure() {
-    const structure = {
+    return {
       timestamp: Date.now(),
       url: window.location.href,
       title: document.title,
       elements: this.findAllElements(),
       interactiveElements: this.getInteractiveElements(),
       metadata: {
-        viewport: {
-          width: window.innerWidth,
-          height: window.innerHeight
-        },
-        scrollPosition: {
-          x: window.scrollX,
-          y: window.scrollY
-        }
-      }
+        viewport: { width: window.innerWidth, height: window.innerHeight },
+        scrollPosition: { x: window.scrollX, y: window.scrollY },
+      },
     };
-
-    return structure;
   }
 
-  // インタラクティブな要素を抽出
-  getInteractiveElements() {
-    const elements = [];
-    const selector = 'button, a, input, textarea, [role="button"], [contenteditable="true"]';
+  getInteractiveElements(): InteractiveElement[] {
+    const elements: InteractiveElement[] = [];
+    const selector =
+      'button, a, input, textarea, [role="button"], [contenteditable="true"]';
     const interactives = document.querySelectorAll(selector);
 
     interactives.forEach((el, index) => {
-      if (index >= 50) return; // 最大50個まで
-
+      if (index >= 50) return;
       const rect = el.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return; // 非表示要素はスキップ
-
+      if (rect.width === 0 || rect.height === 0) return;
       elements.push({
         index,
         type: el.tagName.toLowerCase(),
@@ -118,25 +123,21 @@ class DOMAnalyzer {
         text: el.textContent?.trim().substring(0, 50) || '',
         description: el.getAttribute('description') || '',
         isVisible: rect.width > 0 && rect.height > 0,
-        position: {
-          x: Math.round(rect.x),
-          y: Math.round(rect.y)
-        }
+        position: { x: Math.round(rect.x), y: Math.round(rect.y) },
       });
     });
 
     return elements;
   }
 
-  // AI向けのテキスト形式で出力
-  exportForAI() {
+  exportForAI(): string {
     const structure = this.capturePageStructure();
-    
+
     let output = `## Gemini Chat Page Structure\n\n`;
     output += `**URL**: ${structure.url}\n`;
     output += `**Title**: ${structure.title}\n\n`;
-    
     output += `### Main Elements\n\n`;
+
     for (const [type, data] of Object.entries(structure.elements)) {
       if (data.element) {
         output += `- **${type}**: \`${data.selector}\` ✓\n`;
@@ -144,9 +145,9 @@ class DOMAnalyzer {
         output += `- **${type}**: Not found ✗\n`;
       }
     }
-    
+
     output += `\n### Interactive Elements (${structure.interactiveElements.length})\n\n`;
-    structure.interactiveElements.slice(0, 10).forEach(el => {
+    structure.interactiveElements.slice(0, 10).forEach((el) => {
       if (el.text) {
         output += `- [${el.type}] ${el.text} (${el.ariaLabel || el.role})\n`;
       }
@@ -155,24 +156,19 @@ class DOMAnalyzer {
     return output;
   }
 
-  // クリップボードにコピー
-  async copyToClipboard() {
+  async copyToClipboard(): Promise<boolean> {
     const text = this.exportForAI();
-    
     try {
       await navigator.clipboard.writeText(text);
       this.showNotification('ページ構造をクリップボードにコピーしました');
-      console.log('[DOMAnalyzer] Copied to clipboard:\n', text);
       return true;
-    } catch (err) {
-      console.error('[DOMAnalyzer] Failed to copy:', err);
+    } catch {
       this.showNotification('コピーに失敗しました', 'error');
       return false;
     }
   }
 
-  // 通知を表示
-  showNotification(message, type = 'success') {
+  showNotification(message: string, type: 'success' | 'error' = 'success'): void {
     const notification = document.createElement('div');
     notification.style.cssText = `
       position: fixed;
@@ -189,7 +185,7 @@ class DOMAnalyzer {
       animation: slideIn 0.3s ease-out;
     `;
     notification.textContent = message;
-    
+
     const style = document.createElement('style');
     style.textContent = `
       @keyframes slideIn {
@@ -199,7 +195,7 @@ class DOMAnalyzer {
     `;
     document.head.appendChild(style);
     document.body.appendChild(notification);
-    
+
     setTimeout(() => {
       notification.style.transition = 'opacity 0.3s';
       notification.style.opacity = '0';
@@ -208,16 +204,12 @@ class DOMAnalyzer {
   }
 }
 
-// グローバルに公開
-window.domAnalyzer = new DOMAnalyzer();
-
-// コンソールから使いやすいヘルパー関数
-window.analyzePage = () => {
-  console.log(window.domAnalyzer.capturePageStructure());
-};
-
-window.copyPageStructure = () => {
-  window.domAnalyzer.copyToClipboard();
-};
-
-console.log('[DOMAnalyzer] Loaded. Use analyzePage() or copyPageStructure() in console.');
+export function initializeDOMAnalyzer(): void {
+  window.domAnalyzer = new DOMAnalyzer();
+  window.analyzePage = () => {
+    console.log(window.domAnalyzer!.capturePageStructure());
+  };
+  window.copyPageStructure = () => {
+    window.domAnalyzer!.copyToClipboard();
+  };
+}

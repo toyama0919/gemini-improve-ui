@@ -1,13 +1,10 @@
 // Settings management
 
-// Default deep dive prompt (appended when clicking deep dive button without Ctrl)
-const DEFAULT_DEEP_DIVE_PROMPT = 'これについて詳しく';
+export const DEFAULT_DEEP_DIVE_PROMPT = 'これについて詳しく';
 
-// Deep dive prompt (loaded from storage)
 let deepDivePrompt = DEFAULT_DEEP_DIVE_PROMPT;
 
-// Load deep dive prompt from Chrome storage
-function loadDeepDivePrompt() {
+export function loadDeepDivePrompt(): Promise<string> {
   return new Promise((resolve) => {
     chrome.storage.sync.get(['deepDivePrompt'], (result) => {
       if (result.deepDivePrompt !== undefined) {
@@ -20,13 +17,32 @@ function loadDeepDivePrompt() {
   });
 }
 
-// Get deep dive prompt (synchronous, use after load)
-function getDeepDivePrompt() {
+export function getDeepDivePrompt(): string {
   return deepDivePrompt || DEFAULT_DEEP_DIVE_PROMPT;
 }
 
-// Default keyboard shortcuts
-const DEFAULT_SHORTCUTS = {
+export interface Shortcuts {
+  chat: {
+    navigateToSearch: string;
+    toggleSidebar: string;
+    toggleHistoryMode: string;
+    scrollUp: string;
+    scrollDown: string;
+    historyUp: string;
+    historyDown: string;
+    historyOpen: string;
+    historyExit: string;
+  };
+  search: {
+    moveUp: string;
+    moveDown: string;
+    openResult: string;
+    scrollUp: string;
+    scrollDown: string;
+  };
+}
+
+export const DEFAULT_SHORTCUTS: Shortcuts = {
   chat: {
     navigateToSearch: 'Insert',
     toggleSidebar: 'Delete',
@@ -36,22 +52,20 @@ const DEFAULT_SHORTCUTS = {
     historyUp: 'ArrowUp',
     historyDown: 'ArrowDown',
     historyOpen: 'Enter',
-    historyExit: 'Escape'
+    historyExit: 'Escape',
   },
   search: {
     moveUp: 'ArrowUp',
     moveDown: 'ArrowDown',
     openResult: 'Enter',
     scrollUp: 'PageUp',
-    scrollDown: 'PageDown'
-  }
+    scrollDown: 'PageDown',
+  },
 };
 
-// Current shortcuts (will be loaded from storage)
-let currentShortcuts = null;
+let currentShortcuts: Shortcuts | null = null;
 
-// Load shortcuts from Chrome storage
-async function loadShortcuts() {
+export function loadShortcuts(): Promise<Shortcuts> {
   return new Promise((resolve) => {
     chrome.storage.sync.get(['shortcuts'], (result) => {
       if (result.shortcuts) {
@@ -59,13 +73,12 @@ async function loadShortcuts() {
       } else {
         currentShortcuts = JSON.parse(JSON.stringify(DEFAULT_SHORTCUTS));
       }
-      resolve(currentShortcuts);
+      resolve(currentShortcuts!);
     });
   });
 }
 
-// Save shortcuts to Chrome storage
-function saveShortcuts(shortcuts) {
+export function saveShortcuts(shortcuts: Shortcuts): Promise<void> {
   return new Promise((resolve) => {
     chrome.storage.sync.set({ shortcuts }, () => {
       currentShortcuts = shortcuts;
@@ -74,43 +87,39 @@ function saveShortcuts(shortcuts) {
   });
 }
 
-// Get current shortcuts (synchronous, must be loaded first)
-function getShortcuts() {
+export function getShortcuts(): Shortcuts {
   return currentShortcuts || DEFAULT_SHORTCUTS;
 }
 
-// Reset shortcuts to default
-function resetShortcuts() {
+export function resetShortcuts(): Promise<void> {
   return saveShortcuts(JSON.parse(JSON.stringify(DEFAULT_SHORTCUTS)));
 }
 
-// Check if key matches shortcut
-function isShortcut(event, shortcutKey) {
-  const shortcuts = getShortcuts();
+type ShortcutKey = string;
 
-  // Get shortcut from nested object (e.g., 'chat.toggleSidebar')
+export function isShortcut(event: KeyboardEvent, shortcutKey: ShortcutKey): boolean {
+  const shortcuts = getShortcuts();
   const keys = shortcutKey.split('.');
-  let shortcut = shortcuts;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let shortcut: any = shortcuts;
   for (const key of keys) {
     shortcut = shortcut[key];
     if (!shortcut) return false;
   }
 
-  // Support for shortcut objects with modifier keys
   if (typeof shortcut === 'object') {
     const metaMatch = shortcut.meta ? event.metaKey : !event.metaKey;
     const ctrlMatch = shortcut.ctrl ? event.ctrlKey : !event.ctrlKey;
     const shiftMatch = shortcut.shift ? event.shiftKey : !event.shiftKey;
-
-    return event.code === shortcut.key &&
-           metaMatch &&
-           ctrlMatch &&
-           shiftMatch;
+    return (
+      event.code === shortcut.key && metaMatch && ctrlMatch && shiftMatch
+    );
   }
 
-  // Check if event matches shortcut (simple key)
-  return event.code === shortcut &&
-         !event.ctrlKey &&
-         !event.metaKey &&
-         !event.shiftKey;
+  return (
+    event.code === shortcut &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.shiftKey
+  );
 }

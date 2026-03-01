@@ -1,28 +1,28 @@
 // Chat export functionality - saves current conversation as Zettelkasten Markdown
 
 const EXPORT_BUTTON_ID = 'gemini-export-note-button';
-let exportDirHandle = null;
+let exportDirHandle: FileSystemDirectoryHandle | null = null;
 
 // --- IndexedDB helpers ---
 
-function openExportDB() {
+function openExportDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open('gemini-export', 1);
     req.onupgradeneeded = (e) => {
-      e.target.result.createObjectStore('handles');
+      (e.target as IDBOpenDBRequest).result.createObjectStore('handles');
     };
-    req.onsuccess = (e) => resolve(e.target.result);
+    req.onsuccess = (e) => resolve((e.target as IDBOpenDBRequest).result);
     req.onerror = () => reject(req.error);
   });
 }
 
-async function getStoredDirHandle() {
+async function getStoredDirHandle(): Promise<FileSystemDirectoryHandle | null> {
   try {
     const db = await openExportDB();
     return new Promise((resolve) => {
       const tx = db.transaction('handles', 'readonly');
       const req = tx.objectStore('handles').get('save_dir');
-      req.onsuccess = () => resolve(req.result || null);
+      req.onsuccess = () => resolve((req.result as FileSystemDirectoryHandle) || null);
       req.onerror = () => resolve(null);
     });
   } catch {
@@ -30,10 +30,10 @@ async function getStoredDirHandle() {
   }
 }
 
-async function storeDirHandle(handle) {
+async function storeDirHandle(handle: FileSystemDirectoryHandle): Promise<void> {
   try {
     const db = await openExportDB();
-    return new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const tx = db.transaction('handles', 'readwrite');
       tx.objectStore('handles').put(handle, 'save_dir');
       tx.oncomplete = () => resolve();
@@ -46,14 +46,12 @@ async function storeDirHandle(handle) {
 
 // --- Directory handle management ---
 
-async function getExportDirHandle() {
-  // Use in-memory cache first
+async function getExportDirHandle(): Promise<FileSystemDirectoryHandle> {
   if (exportDirHandle) {
     const perm = await exportDirHandle.queryPermission({ mode: 'readwrite' });
     if (perm === 'granted') return exportDirHandle;
   }
 
-  // Try stored handle
   const stored = await getStoredDirHandle();
   if (stored) {
     const perm = await stored.queryPermission({ mode: 'readwrite' });
@@ -61,7 +59,6 @@ async function getExportDirHandle() {
       exportDirHandle = stored;
       return exportDirHandle;
     }
-    // Permission expired - request it (valid because this runs in a click handler)
     const newPerm = await stored.requestPermission({ mode: 'readwrite' });
     if (newPerm === 'granted') {
       exportDirHandle = stored;
@@ -69,7 +66,6 @@ async function getExportDirHandle() {
     }
   }
 
-  // No handle or permission denied - ask user to pick a folder
   const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
   await storeDirHandle(handle);
   exportDirHandle = handle;
@@ -79,16 +75,16 @@ async function getExportDirHandle() {
 // --- Text cleanup ---
 
 const ARTIFACT_PATTERNS = [
-  /^[+＋]$/,                          // Gemini accordion expand buttons
-  /^Google スプレッドシートにエクスポート$/,  // Table export button
+  /^[+＋]$/,
+  /^Google スプレッドシートにエクスポート$/,
   /^Google Sheets にエクスポート$/,
   /^Export to Sheets$/,
 ];
 
-function cleanModelText(text) {
+function cleanModelText(text: string): string {
   return text
     .split('\n')
-    .filter(line => !ARTIFACT_PATTERNS.some(p => p.test(line.trim())))
+    .filter((line) => !ARTIFACT_PATTERNS.some((p) => p.test(line.trim())))
     .join('\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
@@ -96,8 +92,10 @@ function cleanModelText(text) {
 
 // --- Scroll to load all messages ---
 
-async function loadAllMessages() {
-  const scroller = document.querySelector('infinite-scroller.chat-history');
+async function loadAllMessages(): Promise<void> {
+  const scroller = document.querySelector<HTMLElement>(
+    'infinite-scroller.chat-history'
+  );
   if (!scroller) return;
 
   showExportNotification('メッセージを読み込み中...');
@@ -105,32 +103,42 @@ async function loadAllMessages() {
   let prevCount = 0;
   for (let i = 0; i < 30; i++) {
     scroller.scrollTop = 0;
-    await new Promise(r => setTimeout(r, 400));
+    await new Promise((r) => setTimeout(r, 400));
     const count = document.querySelectorAll('user-query').length;
     if (count === prevCount) break;
     prevCount = count;
   }
 
-  // Scroll back to bottom after loading
   scroller.scrollTop = scroller.scrollHeight;
 }
 
 // --- Chat content extraction ---
 
-function extractChatContent() {
+interface Turn {
+  user: string;
+  model: string;
+}
+
+function extractChatContent(): Turn[] {
   const userQueries = Array.from(document.querySelectorAll('user-query'));
   const modelResponses = Array.from(document.querySelectorAll('model-response'));
 
-  const turns = [];
+  const turns: Turn[] = [];
   const len = Math.min(userQueries.length, modelResponses.length);
 
   for (let i = 0; i < len; i++) {
-    const userText = Array.from(userQueries[i].querySelectorAll('.query-text-line'))
-      .map(el => el.innerText.trim())
+    const userText = Array.from(
+      userQueries[i].querySelectorAll('.query-text-line')
+    )
+      .map((el) => (el as HTMLElement).innerText.trim())
       .filter(Boolean)
       .join('\n');
 
-    const rawModelText = modelResponses[i].querySelector('message-content .markdown')?.innerText?.trim();
+    const rawModelText = (
+      modelResponses[i].querySelector(
+        'message-content .markdown'
+      ) as HTMLElement | null
+    )?.innerText?.trim();
     const modelText = rawModelText ? cleanModelText(rawModelText) : '';
 
     if (userText || modelText) {
@@ -141,21 +149,36 @@ function extractChatContent() {
   return turns;
 }
 
-function getChatId() {
+function getChatId(): string {
   return location.pathname.split('/').pop() || 'unknown';
 }
 
 // --- Markdown generation (Zettelkasten format) ---
 
-function generateMarkdown(turns) {
+function generateMarkdown(turns: Turn[]): {
+  markdown: string;
+  id: string;
+  title: string;
+} {
   const now = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
-  const id = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const pad = (n: number) => String(n).padStart(2, '0');
   const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
   const timeStr = `${dateStr}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-  const conversationTitle = document.querySelector('[data-test-id="conversation-title"]')?.innerText?.trim();
-  const firstUserLines = (turns[0]?.user || '').split('\n').map(l => l.trim()).filter(Boolean);
-  const fallbackTitle = firstUserLines.find(l => !/^https?:\/\//i.test(l)) || firstUserLines[0] || 'Gemini chat';
+  const id = timeStr.replace(/[-:T]/g, '');
+
+  const conversationTitle = (
+    document.querySelector(
+      '[data-test-id="conversation-title"]'
+    ) as HTMLElement | null
+  )?.innerText?.trim();
+  const firstUserLines = (turns[0]?.user || '')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const fallbackTitle =
+    firstUserLines.find((l) => !/^https?:\/\//i.test(l)) ||
+    firstUserLines[0] ||
+    'Gemini chat';
   const title = (conversationTitle || fallbackTitle).slice(0, 60);
 
   const chatId = getChatId();
@@ -170,7 +193,6 @@ function generateMarkdown(turns) {
   ].join('\n');
 
   const sections = [frontmatter];
-
   for (const turn of turns) {
     sections.push('');
     sections.push(`**Q:** ${turn.user}`);
@@ -185,7 +207,7 @@ function generateMarkdown(turns) {
 
 // --- File save ---
 
-async function saveNote(forcePickDir = false) {
+export async function saveNote(forcePickDir = false): Promise<void> {
   await loadAllMessages();
 
   const turns = extractChatContent();
@@ -194,7 +216,7 @@ async function saveNote(forcePickDir = false) {
     return;
   }
 
-  let dirHandle;
+  let dirHandle: FileSystemDirectoryHandle;
   try {
     if (forcePickDir) {
       const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
@@ -206,18 +228,24 @@ async function saveNote(forcePickDir = false) {
       dirHandle = await getExportDirHandle();
     }
   } catch {
-    // User cancelled picker or permission denied
     return;
   }
 
   const { markdown, title } = generateMarkdown(turns);
   const chatId = getChatId();
-  const safeTitle = title.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '-').slice(0, 40);
+  const safeTitle = title
+    .replace(/[\\/:*?"<>|]/g, '')
+    .replace(/\s+/g, '-')
+    .slice(0, 40);
   const filename = `gemini-${safeTitle}-${chatId}.md`;
 
   try {
-    const inboxHandle = await dirHandle.getDirectoryHandle('inbox', { create: true });
-    const fileHandle = await inboxHandle.getFileHandle(filename, { create: true });
+    const inboxHandle = await dirHandle.getDirectoryHandle('inbox', {
+      create: true,
+    });
+    const fileHandle = await inboxHandle.getFileHandle(filename, {
+      create: true,
+    });
     const writable = await fileHandle.createWritable();
     await writable.write(markdown);
     await writable.close();
@@ -229,7 +257,10 @@ async function saveNote(forcePickDir = false) {
 
 // --- UI ---
 
-function showExportNotification(message, type = 'success') {
+function showExportNotification(
+  message: string,
+  type: 'success' | 'error' = 'success'
+): void {
   const existing = document.getElementById('gemini-export-notification');
   if (existing) existing.remove();
 
@@ -253,16 +284,18 @@ function showExportNotification(message, type = 'success') {
   setTimeout(() => el.remove(), 3000);
 }
 
-function createExportButton() {
+function createExportButton(): void {
   if (document.getElementById(EXPORT_BUTTON_ID)) return;
 
-  // Find the input area toolbar to place the button near it
-  const inputArea = document.querySelector('input-area-v2') || document.querySelector('input-container');
+  const inputArea =
+    document.querySelector('input-area-v2') ||
+    document.querySelector('input-container');
   if (!inputArea) return;
 
   const btn = document.createElement('button');
   btn.id = EXPORT_BUTTON_ID;
-  btn.title = 'Save as Zettelkasten note';
+  btn.title =
+    'Save as Zettelkasten note\nShift+クリックで保存先を変更';
   btn.textContent = '💾 Save note';
   btn.style.cssText = `
     position: fixed;
@@ -281,18 +314,19 @@ function createExportButton() {
     transition: background 0.2s;
   `;
 
-  btn.addEventListener('mouseenter', () => { btn.style.background = '#1557b0'; });
-  btn.addEventListener('mouseleave', () => { btn.style.background = '#1a73e8'; });
+  btn.addEventListener('mouseenter', () => {
+    btn.style.background = '#1557b0';
+  });
+  btn.addEventListener('mouseleave', () => {
+    btn.style.background = '#1a73e8';
+  });
   btn.addEventListener('click', (e) => saveNote(e.shiftKey));
-  btn.title = 'Save as Zettelkasten note\nShift+クリックで保存先を変更';
 
   document.body.appendChild(btn);
 }
 
-function initializeExport() {
-  // Only show button when viewing a conversation (URL has chat ID)
+export function initializeExport(): void {
   const chatId = getChatId();
   if (!chatId || chatId === 'app') return;
-
   createExportButton();
 }
