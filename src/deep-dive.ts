@@ -30,7 +30,11 @@ function addDeepDiveButtons(): void {
 
     if (hasHeadings) {
       headings.forEach((heading) => {
-        if (heading.querySelector('.deep-dive-button-inline')) return;
+        const existing = heading.querySelector('.deep-dive-button-inline');
+        if (existing) {
+          if (existing.hasAttribute('data-initialized')) return;
+          heading.querySelectorAll('.deep-dive-button-inline, .deep-dive-expand-button').forEach((b) => b.remove());
+        }
         targets.push({
           type: 'section',
           element: heading,
@@ -43,7 +47,12 @@ function addDeepDiveButtons(): void {
       );
       tables.forEach((table) => {
         const wrapper = table.closest<HTMLElement>('.table-block-component');
-        if (wrapper && !wrapper.querySelector('.deep-dive-button-inline')) {
+        if (wrapper) {
+          const existing = wrapper.querySelector('.deep-dive-button-inline');
+          if (existing) {
+            if (existing.hasAttribute('data-initialized')) return;
+            existing.remove();
+          }
           targets.push({
             type: 'table',
             element: wrapper,
@@ -57,7 +66,12 @@ function addDeepDiveButtons(): void {
       );
       tables.forEach((table) => {
         const wrapper = table.closest<HTMLElement>('.table-block-component');
-        if (wrapper && !wrapper.querySelector('.deep-dive-button-inline')) {
+        if (wrapper) {
+          const existing = wrapper.querySelector('.deep-dive-button-inline');
+          if (existing) {
+            if (existing.hasAttribute('data-initialized')) return;
+            existing.remove();
+          }
           targets.push({
             type: 'table',
             element: wrapper,
@@ -70,20 +84,27 @@ function addDeepDiveButtons(): void {
         'blockquote[data-path-to-node]'
       );
       blockquotes.forEach((blockquote) => {
-        if (!blockquote.querySelector('.deep-dive-button-inline')) {
-          targets.push({
-            type: 'blockquote',
-            element: blockquote,
-            getContent: () => blockquote.textContent?.trim() ?? '',
-          });
+        const existing = blockquote.querySelector('.deep-dive-button-inline');
+        if (existing) {
+          if (existing.hasAttribute('data-initialized')) return;
+          existing.remove();
         }
+        targets.push({
+          type: 'blockquote',
+          element: blockquote,
+          getContent: () => blockquote.textContent?.trim() ?? '',
+        });
       });
 
       const lists = responseContainer.querySelectorAll<HTMLElement>(
         'ol[data-path-to-node], ul[data-path-to-node]'
       );
       lists.forEach((list) => {
-        if (list.querySelector('.deep-dive-button-inline')) return;
+        const existing = list.querySelector(':scope > .deep-dive-button-inline');
+        if (existing) {
+          if (existing.hasAttribute('data-initialized')) return;
+          list.querySelectorAll('.deep-dive-button-inline, .deep-dive-expand-button').forEach((b) => b.remove());
+        }
 
         let parent = list.parentElement;
         let isNested = false;
@@ -152,6 +173,7 @@ function getListContent(list: HTMLElement): string {
 type DeepDiveButtonElement = HTMLButtonElement & {
   _deepDiveTarget?: DeepDiveTarget;
   _expandButton?: HTMLButtonElement;
+  _popupClosedAt?: number;
 };
 
 function addDeepDiveButton(target: DeepDiveTarget): void {
@@ -159,6 +181,7 @@ function addDeepDiveButton(target: DeepDiveTarget): void {
   button.className = 'deep-dive-button-inline';
   button.setAttribute('aria-label', 'Deep dive into this content');
   button.setAttribute('data-action', 'deep-dive');
+  button.setAttribute('data-initialized', '1');
   button.title = 'Deep dive into this content';
   button._deepDiveTarget = target;
 
@@ -179,9 +202,17 @@ function addDeepDiveButton(target: DeepDiveTarget): void {
   });
 
   button.addEventListener('keydown', (e) => {
-    if (e.altKey && e.key === 'ArrowRight') {
+    if (e.key === 'ArrowRight' && !e.altKey && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
       e.stopPropagation();
+      if (button._popupClosedAt && Date.now() - button._popupClosedAt < 300) {
+        return;
+      }
+      const expandBtn = button._expandButton;
+      if (expandBtn && expandBtn.getAttribute('data-action') === 'expand') {
+        toggleExpand(target, expandBtn);
+        return;
+      }
       showTemplatePopup(button, target);
     }
   });
@@ -342,7 +373,7 @@ function addChildButton(element: HTMLElement): void {
   });
 
   button.addEventListener('keydown', (e) => {
-    if (e.altKey && e.key === 'ArrowRight') {
+    if (e.key === 'ArrowRight' && !e.altKey && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
       e.stopPropagation();
       showTemplatePopup(button, childTarget);
@@ -457,8 +488,9 @@ async function showTemplatePopup(
   items[0]?.focus();
 
   popup.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' || (e.altKey && e.key === 'ArrowLeft')) {
+    if (e.key === 'Escape' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
       e.preventDefault();
+      (button as DeepDiveButtonElement)._popupClosedAt = Date.now();
       hideTemplatePopup();
       button.focus();
     } else if (e.key === 'ArrowDown') {

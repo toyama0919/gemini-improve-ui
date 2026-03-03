@@ -21,7 +21,6 @@ export default defineConfig({
     chromiumArgs: [
       '--remote-debugging-port=9222',
       `--user-data-dir=${process.cwd()}/.chrome-devtools-mcp`,
-      '--disable-blink-features=AutomationControlled',
       '--exclude-switches=enable-automation',
     ],
     startUrls: ['https://gemini.google.com/app'],
