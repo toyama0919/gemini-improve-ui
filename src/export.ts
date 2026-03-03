@@ -205,16 +205,16 @@ async function loadAllMessages(): Promise<void> {
 
 // --- Chat content extraction ---
 
-interface Turn {
+interface Chat {
   user: string;
   model: string;
 }
 
-function extractChatContent(): Turn[] {
+function extractChatContent(): Chat[] {
   const userQueries = Array.from(document.querySelectorAll('user-query'));
   const modelResponses = Array.from(document.querySelectorAll('model-response'));
 
-  const turns: Turn[] = [];
+  const chats: Chat[] = [];
   const len = Math.min(userQueries.length, modelResponses.length);
 
   for (let i = 0; i < len; i++) {
@@ -234,11 +234,11 @@ function extractChatContent(): Turn[] {
     const modelText = rawModelText ? cleanModelText(rawModelText) : '';
 
     if (userText || modelText) {
-      turns.push({ user: userText || '', model: modelText || '' });
+      chats.push({ user: userText || '', model: modelText || '' });
     }
   }
 
-  return turns;
+  return chats;
 }
 
 function getChatId(): string {
@@ -258,7 +258,7 @@ function yamlBlock(text: string, indent: string): string {
     .join('\n');
 }
 
-function generateMarkdown(turns: Turn[]): {
+function generateMarkdown(chats: Chat[]): {
   markdown: string;
   id: string;
   title: string;
@@ -274,7 +274,7 @@ function generateMarkdown(turns: Turn[]): {
       '[data-test-id="conversation-title"]'
     ) as HTMLElement | null
   )?.innerText?.trim();
-  const firstUserLines = (turns[0]?.user || '')
+  const firstUserLines = (chats[0]?.user || '')
     .split('\n')
     .map((l) => l.trim())
     .filter(Boolean);
@@ -293,15 +293,16 @@ function generateMarkdown(turns: Turn[]): {
     'tags:',
     '  - gemini',
     '  - fleeting',
-    'turns:',
+    'chats:',
   ];
 
-  for (const turn of turns) {
+  for (const turn of chats) {
     lines.push('  - q: |');
     lines.push(yamlBlock(turn.user, '      '));
     lines.push('    a: |');
     lines.push(yamlBlock(turn.model, '      '));
   }
+
 
   return { markdown: lines.join('\n'), id, title };
 }
@@ -311,8 +312,8 @@ function generateMarkdown(turns: Turn[]): {
 export async function saveNote(forcePickDir = false): Promise<void> {
   await loadAllMessages();
 
-  const turns = extractChatContent();
-  if (turns.length === 0) {
+  const chats = extractChatContent();
+  if (chats.length === 0) {
     showExportNotification('保存できる会話が見つかりません', 'error');
     return;
   }
@@ -332,7 +333,7 @@ export async function saveNote(forcePickDir = false): Promise<void> {
     return;
   }
 
-  const { markdown, title } = generateMarkdown(turns);
+  const { markdown, title } = generateMarkdown(chats);
   const chatId = getChatId();
   const safeTitle = title
     .replace(/[\\/:*?"<>|]/g, '')

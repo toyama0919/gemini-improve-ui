@@ -76,7 +76,7 @@ class DOMAnalyzer {
       try {
         const element = document.querySelector(selector);
         if (element) return { element, selector };
-      } catch (e) {
+      } catch {
         // Invalid selector, skip
       }
     }
