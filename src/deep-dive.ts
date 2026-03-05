@@ -6,7 +6,7 @@ interface DeepDiveMode {
 }
 
 interface DeepDiveTarget {
-  type: 'section' | 'table' | 'blockquote' | 'list' | 'child';
+  type: 'section' | 'table' | 'blockquote' | 'list' | 'child' | 'orphan';
   element: HTMLElement;
   getContent: () => string;
   expandButtonId?: string;
@@ -59,6 +59,21 @@ function addDeepDiveButtons(): void {
             getContent: () => getTableContent(table),
           });
         }
+      });
+
+      // h/hr に属さない孤立段落ブロック（先頭・末尾など）をターゲットに追加
+      const orphanGroups = getOrphanParagraphGroups(responseContainer as HTMLElement, headings);
+      orphanGroups.forEach((group) => {
+        const existing = group.anchor.querySelector('.deep-dive-button-inline');
+        if (existing) {
+          if (existing.hasAttribute('data-initialized')) return;
+          existing.remove();
+        }
+        targets.push({
+          type: 'orphan',
+          element: group.anchor,
+          getContent: () => group.elements.map((el) => el.textContent?.trim() ?? '').filter(Boolean).join('\n\n'),
+        });
       });
     } else {
       const tables = responseContainer.querySelectorAll<HTMLElement>(
@@ -130,6 +145,57 @@ function addDeepDiveButtons(): void {
 
     targets.forEach((target) => addDeepDiveButton(target));
   });
+}
+
+interface OrphanGroup {
+  anchor: HTMLElement;
+  elements: HTMLElement[];
+}
+
+function getOrphanParagraphGroups(
+  container: HTMLElement,
+  headings: NodeListOf<HTMLElement>
+): OrphanGroup[] {
+  const headingSet = new Set(Array.from(headings));
+  const children = Array.from(container.children) as HTMLElement[];
+  const groups: OrphanGroup[] = [];
+  let current: HTMLElement[] = [];
+  // 直前の区切りがhタグかどうか（hタグ直後のpはセクション本文なのでorphanではない）
+  let prevBreakerWasHeading = false;
+
+  const flush = (afterHeading: boolean) => {
+    if (current.length > 0 && !afterHeading) {
+      groups.push({ anchor: current[0], elements: [...current] });
+    }
+    current = [];
+  };
+
+  for (const child of children) {
+    const tag = child.tagName;
+    const isParagraph = tag === 'P';
+    const isHeading =
+      headingSet.has(child) ||
+      tag === 'H1' || tag === 'H2' || tag === 'H3' ||
+      tag === 'H4' || tag === 'H5' || tag === 'H6';
+    const isHr = tag === 'HR';
+
+    if (isHeading) {
+      flush(prevBreakerWasHeading);
+      prevBreakerWasHeading = true;
+    } else if (isHr) {
+      flush(prevBreakerWasHeading);
+      prevBreakerWasHeading = false;
+    } else if (isParagraph) {
+      current.push(child);
+    } else {
+      // ul/ol/table/blockquote 等はグループを区切るだけで収集しない
+      flush(prevBreakerWasHeading);
+      prevBreakerWasHeading = false;
+    }
+  }
+  flush(prevBreakerWasHeading);
+
+  return groups;
 }
 
 function getSectionContent(heading: HTMLElement): string {
@@ -245,6 +311,12 @@ function addDeepDiveButton(target: DeepDiveTarget): void {
     button.style.position = 'absolute';
     button.style.top = '8px';
     button.style.right = '8px';
+    target.element.appendChild(button);
+  } else if (target.type === 'orphan') {
+    target.element.style.position = 'relative';
+    button.style.position = 'absolute';
+    button.style.top = '0';
+    button.style.right = '0';
     target.element.appendChild(button);
   } else if (target.type === 'list') {
     target.element.style.position = 'relative';
