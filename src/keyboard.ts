@@ -244,21 +244,7 @@ function handleChatPageKeydown(event: KeyboardEvent): boolean {
       }
 
       if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
-        event.preventDefault();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const expandButton = (focusedElement as any)._expandButton as HTMLElement | undefined;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const target = (focusedElement as any)._deepDiveTarget;
-        if (expandButton && target) {
-          const isExpanded =
-            expandButton.getAttribute('data-action') === 'collapse';
-          if (event.key === 'ArrowRight' && !isExpanded) {
-            expandButton.click();
-          } else if (event.key === 'ArrowLeft' && isExpanded) {
-            expandButton.click();
-          }
-        }
-        return true;
+        return false;
       }
 
       if (isShortcut(event, 'chat.historyOpen')) {
@@ -272,11 +258,17 @@ function handleChatPageKeydown(event: KeyboardEvent): boolean {
   return false;
 }
 
+const KEYBOARD_HANDLER_KEY = '__geminiKeyboardHandlerVersion';
+
 export function initializeKeyboardHandlers(): void {
+  const version = Date.now().toString();
+  (document as Record<string, unknown>)[KEYBOARD_HANDLER_KEY] = version;
+
   loadShortcuts().then(() => {
     document.addEventListener(
       'keydown',
       (event) => {
+        if ((document as Record<string, unknown>)[KEYBOARD_HANDLER_KEY] !== version) return;
         if (isSearchPage()) {
           handleSearchPageKeydown(event);
           return;

@@ -16,6 +16,8 @@ const DEFAULT_DEEP_DIVE_MODES: DeepDiveMode[] = [
   { id: 'default', prompt: 'これについて詳しく' },
 ];
 
+const SESSION_ID = Math.random().toString(36).substr(2, 9);
+
 function addDeepDiveButtons(): void {
   const responseContainers = document.querySelectorAll('.markdown-main-panel');
   if (responseContainers.length === 0) return;
@@ -32,7 +34,7 @@ function addDeepDiveButtons(): void {
       headings.forEach((heading) => {
         const existing = heading.querySelector('.deep-dive-button-inline');
         if (existing) {
-          if (existing.hasAttribute('data-initialized')) return;
+          if (existing.getAttribute('data-initialized') === SESSION_ID) return;
           heading.querySelectorAll('.deep-dive-button-inline, .deep-dive-expand-button').forEach((b) => b.remove());
         }
         targets.push({
@@ -50,7 +52,7 @@ function addDeepDiveButtons(): void {
         if (wrapper) {
           const existing = wrapper.querySelector('.deep-dive-button-inline');
           if (existing) {
-            if (existing.hasAttribute('data-initialized')) return;
+            if (existing.getAttribute('data-initialized') === SESSION_ID) return;
             existing.remove();
           }
           targets.push({
@@ -66,7 +68,7 @@ function addDeepDiveButtons(): void {
       orphanGroups.forEach((group) => {
         const existing = group.anchor.querySelector('.deep-dive-button-inline');
         if (existing) {
-          if (existing.hasAttribute('data-initialized')) return;
+          if (existing.getAttribute('data-initialized') === SESSION_ID) return;
           existing.remove();
         }
         targets.push({
@@ -84,7 +86,7 @@ function addDeepDiveButtons(): void {
         if (wrapper) {
           const existing = wrapper.querySelector('.deep-dive-button-inline');
           if (existing) {
-            if (existing.hasAttribute('data-initialized')) return;
+            if (existing.getAttribute('data-initialized') === SESSION_ID) return;
             existing.remove();
           }
           targets.push({
@@ -101,7 +103,7 @@ function addDeepDiveButtons(): void {
       blockquotes.forEach((blockquote) => {
         const existing = blockquote.querySelector('.deep-dive-button-inline');
         if (existing) {
-          if (existing.hasAttribute('data-initialized')) return;
+          if (existing.getAttribute('data-initialized') === SESSION_ID) return;
           existing.remove();
         }
         targets.push({
@@ -117,7 +119,7 @@ function addDeepDiveButtons(): void {
       lists.forEach((list) => {
         const existing = list.querySelector(':scope > .deep-dive-button-inline');
         if (existing) {
-          if (existing.hasAttribute('data-initialized')) return;
+          if (existing.getAttribute('data-initialized') === SESSION_ID) return;
           list.querySelectorAll('.deep-dive-button-inline, .deep-dive-expand-button').forEach((b) => b.remove());
         }
 
@@ -238,8 +240,6 @@ function getListContent(list: HTMLElement): string {
 
 type DeepDiveButtonElement = HTMLButtonElement & {
   _deepDiveTarget?: DeepDiveTarget;
-  _expandButton?: HTMLButtonElement;
-  _popupClosedAt?: number;
 };
 
 function addDeepDiveButton(target: DeepDiveTarget): void {
@@ -247,7 +247,7 @@ function addDeepDiveButton(target: DeepDiveTarget): void {
   button.className = 'deep-dive-button-inline';
   button.setAttribute('aria-label', 'Deep dive into this content');
   button.setAttribute('data-action', 'deep-dive');
-  button.setAttribute('data-initialized', '1');
+  button.setAttribute('data-initialized', SESSION_ID);
   button.title = 'Deep dive into this content';
   button._deepDiveTarget = target;
 
@@ -269,24 +269,27 @@ function addDeepDiveButton(target: DeepDiveTarget): void {
 
   button.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowRight' && !e.altKey && !e.ctrlKey && !e.metaKey) {
+      const expandBtn = target.element.querySelector<HTMLButtonElement>('.deep-dive-expand-button');
+      if (expandBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleExpand(target, expandBtn);
+      }
+    } else if (e.key === 'ArrowLeft' && !e.altKey && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
       e.stopPropagation();
-      if (button._popupClosedAt && Date.now() - button._popupClosedAt < 300) {
-        return;
+      if (document.getElementById('deep-dive-template-popup')) {
+        hideTemplatePopup();
+        button.focus();
+      } else {
+        showTemplatePopup(button, target);
       }
-      const expandBtn = button._expandButton;
-      if (expandBtn && expandBtn.getAttribute('data-action') === 'expand') {
-        toggleExpand(target, expandBtn);
-        return;
-      }
-      showTemplatePopup(button, target);
     }
   });
 
   let expandButton: HTMLButtonElement | null = null;
   if (target.type === 'section' || target.type === 'list') {
     expandButton = createExpandButton(target);
-    button._expandButton = expandButton;
   }
 
   if (target.type === 'section') {
@@ -445,10 +448,15 @@ function addChildButton(element: HTMLElement): void {
   });
 
   button.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowRight' && !e.altKey && !e.ctrlKey && !e.metaKey) {
+    if (e.key === 'ArrowLeft' && !e.altKey && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
       e.stopPropagation();
-      showTemplatePopup(button, childTarget);
+      if (document.getElementById('deep-dive-template-popup')) {
+        hideTemplatePopup();
+        button.focus();
+      } else {
+        showTemplatePopup(button, childTarget);
+      }
     }
   });
 
@@ -560,9 +568,8 @@ async function showTemplatePopup(
   items[0]?.focus();
 
   popup.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+    if (e.key === 'Escape' || e.key === 'ArrowLeft') {
       e.preventDefault();
-      (button as DeepDiveButtonElement)._popupClosedAt = Date.now();
       hideTemplatePopup();
       button.focus();
     } else if (e.key === 'ArrowDown') {
