@@ -1,27 +1,28 @@
-# Gemini Deep Dive — Orion Browser (iOS) Userscript
+# Gemini Deep Dive — Orion Browser (iOS)
 
-Deep Dive機能のみのスタンドアロンUserscript。Orion for iOSで動作する。
+Deep Dive機能のみの軽量Chrome拡張。Orion for iOSで動作する。
 
 ## インストール
 
-### URLから直接
+Orion iOSはChrome拡張を直接サポートしている。
 
-Orion for iOSで以下のURLを開く:
+### 手順
 
-```
-https://raw.githubusercontent.com/toyama0919/gemini-improve-ui/main/orion_browser/gemini-deep-dive.user.js
-```
+1. **Orion設定でChrome拡張を有効化**
+   - ••• メニュー → Settings → Extensions → Chrome extensions を ON
 
-Orionがスクリプトを自動検出して「Install Userscript」ダイアログを表示する。
+2. **拡張ファイルをiPhoneに転送**
+   - `orion_browser/` ディレクトリ内の2ファイルをiPhoneに送る（AirDrop、iCloud Drive等）
+     - `manifest.json`
+     - `gemini-deep-dive.js`
 
-### 手動
+3. **Orionで拡張をインストール**
+   - ••• メニュー → Extensions → `+` ボタン → 「ファイルから」を選択
+   - 転送したファイルを指定
 
-1. Orion設定 → Userscripts → 有効にする
-2. `gemini-deep-dive.user.js` をファイルとして追加
-
-### 動作確認
-
-`https://gemini.google.com/app` を開く → Geminiの応答に「↳」ボタンが表示される。
+4. **動作確認**
+   - `https://gemini.google.com/app` を開く
+   - Geminiの応答に「↳」ボタンが表示される
 
 ## 操作方法
 
@@ -42,12 +43,22 @@ Orionがスクリプトを自動検出して「Install Userscript」ダイアロ
 - 「保存」で `localStorage` に永続化
 - モードが2つ以上ある場合、⚙ の横にモード切替セレクタが表示される
 
-## Chrome拡張との違い
+## ファイル構成
 
-| 項目 | Chrome拡張 | このUserscript |
+```
+orion_browser/
+├── manifest.json          ← Chrome MV3 マニフェスト
+├── gemini-deep-dive.js    ← Content script (Deep Dive機能)
+└── README.md
+```
+
+## Chrome拡張版との違い
+
+| 項目 | 本体Chrome拡張 | この拡張 |
 |---|---|---|
 | 対象 | Chrome / Edge / Orion (macOS) | Orion (iOS) |
 | 機能 | 全機能 | Deep Diveのみ |
-| 設定保存 | `chrome.storage.sync` | `GM_setValue` / `localStorage` |
+| 設定保存 | `chrome.storage.sync` | `localStorage` |
 | 設定UI | options.html | ページ内⚙パネル |
 | タッチ操作 | Ctrl+Click | 長押し |
+| ビルド | WXT (TypeScript) | 不要（素のJS） |

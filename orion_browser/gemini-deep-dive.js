@@ -1,29 +1,11 @@
-// ==UserScript==
-// @name         Gemini Deep Dive (iOS/Orion)
-// @namespace    https://github.com/toyama0919/gemini-improve-ui
-// @version      1.0.0
-// @description  Deep dive buttons for Gemini responses — standalone userscript for Orion browser (iOS)
-// @author       toyama0919
-// @match        https://gemini.google.com/app*
-// @grant        GM_setValue
-// @grant        GM_getValue
-// @run-at       document-end
-// ==/UserScript==
-
 (function () {
   'use strict';
 
   // ---------------------------------------------------------------------------
-  // Settings (GM_setValue / GM_getValue with localStorage fallback)
+  // Settings (localStorage only — no chrome.storage, no GM_*)
   // ---------------------------------------------------------------------------
   const storage = {
     get(key, defaultValue) {
-      try {
-        if (typeof GM_getValue === 'function') {
-          const v = GM_getValue(key);
-          return v === undefined ? defaultValue : JSON.parse(v);
-        }
-      } catch { /* fall through */ }
       try {
         const raw = localStorage.getItem('gdd_' + key);
         return raw === null ? defaultValue : JSON.parse(raw);
@@ -32,12 +14,8 @@
       }
     },
     set(key, value) {
-      const json = JSON.stringify(value);
       try {
-        if (typeof GM_setValue === 'function') GM_setValue(key, json);
-      } catch { /* ignore */ }
-      try {
-        localStorage.setItem('gdd_' + key, json);
+        localStorage.setItem('gdd_' + key, JSON.stringify(value));
       } catch { /* ignore */ }
     },
   };
@@ -251,13 +229,13 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Touch: long-press detection (500ms → quote only / show popup)
+  // Touch: long-press detection (500ms → template popup)
   // ---------------------------------------------------------------------------
   function addTouchHandlers(button, target) {
     let pressTimer = null;
     let didLongPress = false;
 
-    button.addEventListener('touchstart', (e) => {
+    button.addEventListener('touchstart', () => {
       didLongPress = false;
       pressTimer = setTimeout(() => {
         didLongPress = true;
@@ -574,7 +552,7 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Settings panel (in-page, replaces options.html)
+  // Settings panel (in-page)
   // ---------------------------------------------------------------------------
   function toggleSettingsPanel() {
     const existing = document.getElementById('gdd-settings-panel');

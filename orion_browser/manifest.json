@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Gemini Deep Dive",
+  "description": "Deep dive buttons for Gemini responses",
+  "version": "1.0.0",
+  "author": "toyama0919",
+  "permissions": [],
+  "content_scripts": [
+    {
+      "matches": ["https://gemini.google.com/app*"],
+      "run_at": "document_end",
+      "js": ["gemini-deep-dive.js"]
+    }
+  ]
+}
