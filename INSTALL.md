@@ -22,6 +22,8 @@
    - Navigate to `https://gemini.google.com/app`
    - Use the keyboard shortcuts
 
+---
+
 ## Troubleshooting
 
 ### If the extension doesn't work
