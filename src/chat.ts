@@ -155,12 +155,14 @@ export function clearAndFocusTextarea(): void {
 }
 
 export function setQueryFromUrl(): void {
-  const path = window.location.pathname;
-  if (path !== '/app' && path !== '/app/') return;
-
   const urlParams = new URLSearchParams(window.location.search);
-  const query = urlParams.get('q');
-  if (!query) return;
+  const path = window.location.pathname;
+
+  const isNewChat = path === '/app' || path === '/app/';
+  const query = isNewChat ? urlParams.get('q') : null;
+  const queryThread = urlParams.get('qt');
+  const text = query || queryThread;
+  if (!text) return;
 
   const send = urlParams.get('send');
   const shouldSend = send === null || send === 'true' || send === '1';
@@ -181,7 +183,7 @@ export function setQueryFromUrl(): void {
         textarea.removeChild(textarea.firstChild);
       }
       const p = document.createElement('p');
-      p.textContent = query;
+      p.textContent = text;
       textarea.appendChild(p);
       textarea.focus();
 
