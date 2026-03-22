@@ -1,4 +1,5 @@
 import { DEFAULT_SHORTCUTS, Shortcuts } from '../../src/settings';
+import { DEFAULT_QUICK_PROMPTS } from '../../src/quick-prompts';
 
 interface DeepDiveMode {
   id: string;
@@ -14,15 +15,19 @@ let currentChatWidth = 900;
 let currentDeepDiveModes: DeepDiveMode[] = JSON.parse(
   JSON.stringify(DEFAULT_DEEP_DIVE_MODES)
 );
+let currentQuickPrompts: string[] = [...DEFAULT_QUICK_PROMPTS];
 
 function loadSettings(): void {
   chrome.storage.sync.get(
-    ['shortcuts', 'chatWidth', 'deepDiveModes', 'currentDeepDiveModeId'],
+    ['shortcuts', 'chatWidth', 'deepDiveModes', 'currentDeepDiveModeId', 'quickPrompts'],
     (result) => {
       if (result.shortcuts) currentShortcuts = result.shortcuts;
       if (result.chatWidth) currentChatWidth = result.chatWidth;
       if (result.deepDiveModes && result.deepDiveModes.length > 0) {
         currentDeepDiveModes = result.deepDiveModes;
+      }
+      if (result.quickPrompts && result.quickPrompts.length > 0) {
+        currentQuickPrompts = result.quickPrompts;
       }
       displaySettings();
     }
@@ -91,8 +96,54 @@ function displayDeepDiveModes(): void {
   container.appendChild(addButton);
 }
 
+function displayQuickPrompts(): void {
+  const container = document.getElementById('quickPrompts');
+  if (!container) return;
+
+  container.innerHTML = '';
+  currentQuickPrompts.forEach((prompt, index) => {
+    const itemDiv = document.createElement('div');
+    itemDiv.style.cssText =
+      'border: 1px solid #e0e0e0; border-radius: 4px; padding: 12px; margin-bottom: 8px; background: #fafafa; display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = prompt;
+    input.placeholder = 'プロンプトを入力';
+    input.style.cssText = 'padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; font-size: 14px;';
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'btn-secondary';
+    deleteBtn.textContent = '削除';
+    deleteBtn.style.cssText = 'padding: 6px 12px;';
+
+    itemDiv.appendChild(input);
+    itemDiv.appendChild(deleteBtn);
+    container.appendChild(itemDiv);
+
+    input.addEventListener('input', (e) => {
+      currentQuickPrompts[index] = (e.target as HTMLInputElement).value;
+    });
+    deleteBtn.addEventListener('click', () => {
+      currentQuickPrompts.splice(index, 1);
+      displayQuickPrompts();
+    });
+  });
+
+  const addButton = document.createElement('button');
+  addButton.className = 'btn-primary';
+  addButton.textContent = '+ プロンプトを追加';
+  addButton.style.cssText = 'width: 100%; margin-top: 8px;';
+  addButton.addEventListener('click', () => {
+    currentQuickPrompts.push('');
+    displayQuickPrompts();
+  });
+  container.appendChild(addButton);
+}
+
 function displaySettings(): void {
   displayDeepDiveModes();
+  displayQuickPrompts();
 
   const chatWidthSlider = document.getElementById('chatWidth') as HTMLInputElement | null;
   const chatWidthValue = document.getElementById('chatWidthValue');
@@ -121,11 +172,14 @@ function saveSettings(): void {
     if (!mode.id) mode.id = `mode-${i}-${Date.now()}`;
   });
 
+  const filteredPrompts = currentQuickPrompts.filter((p) => p.trim() !== '');
+
   chrome.storage.sync.set(
     {
       shortcuts: currentShortcuts,
       chatWidth: currentChatWidth,
       deepDiveModes: currentDeepDiveModes,
+      quickPrompts: filteredPrompts,
     },
     () => {
       showMessage('Settings saved successfully!');
@@ -137,6 +191,7 @@ function resetSettings(): void {
   currentShortcuts = JSON.parse(JSON.stringify(DEFAULT_SHORTCUTS));
   currentChatWidth = 900;
   currentDeepDiveModes = JSON.parse(JSON.stringify(DEFAULT_DEEP_DIVE_MODES));
+  currentQuickPrompts = [...DEFAULT_QUICK_PROMPTS];
   displaySettings();
   chrome.storage.sync.set(
     {
@@ -144,6 +199,7 @@ function resetSettings(): void {
       chatWidth: currentChatWidth,
       deepDiveModes: currentDeepDiveModes,
       currentDeepDiveModeId: 'default',
+      quickPrompts: currentQuickPrompts,
     },
     () => {
       showMessage('Settings reset to default!');

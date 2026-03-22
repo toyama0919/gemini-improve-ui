@@ -20,12 +20,12 @@ import {
 } from './history';
 import {
   isSearchPage,
-  toggleSearchPage,
   moveSearchResultUp,
   moveSearchResultDown,
   openSelectedSearchResult,
 } from './search';
 import { saveNote } from './export';
+import { focusQuickPromptSelector, isQuickPromptFocused } from './quick-prompts';
 
 let lastFocusedActionButtonIndex = -1;
 
@@ -44,12 +44,6 @@ function handleSearchPageKeydown(event: KeyboardEvent): boolean {
     ) {
       return false;
     }
-  }
-
-  if (isShortcut(event, 'chat.navigateToSearch')) {
-    event.preventDefault();
-    toggleSearchPage();
-    return true;
   }
 
   if (isShortcut(event, 'search.moveUp')) {
@@ -125,9 +119,13 @@ function handleChatPageKeydown(event: KeyboardEvent): boolean {
     return true;
   }
 
-  if (isShortcut(event, 'chat.navigateToSearch')) {
+  if (isShortcut(event, 'chat.focusQuickPrompt')) {
     event.preventDefault();
-    toggleSearchPage();
+    if (isQuickPromptFocused()) {
+      focusTextarea();
+    } else {
+      focusQuickPromptSelector();
+    }
     return true;
   }
 

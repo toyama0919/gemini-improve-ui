@@ -23,7 +23,7 @@ export function getDeepDivePrompt(): string {
 
 export interface Shortcuts {
   chat: {
-    navigateToSearch: string;
+    focusQuickPrompt: string;
     toggleSidebar: string;
     toggleHistoryMode: string;
     scrollUp: string;
@@ -44,7 +44,7 @@ export interface Shortcuts {
 
 export const DEFAULT_SHORTCUTS: Shortcuts = {
   chat: {
-    navigateToSearch: 'Insert',
+    focusQuickPrompt: 'Insert',
     toggleSidebar: 'Delete',
     toggleHistoryMode: 'End',
     scrollUp: 'PageUp',
@@ -70,12 +70,23 @@ export function loadShortcuts(): Promise<Shortcuts> {
     chrome.storage.sync.get(['shortcuts'], (result) => {
       if (result.shortcuts) {
         currentShortcuts = result.shortcuts;
+        migrateShortcuts(currentShortcuts!);
       } else {
         currentShortcuts = JSON.parse(JSON.stringify(DEFAULT_SHORTCUTS));
       }
       resolve(currentShortcuts!);
     });
   });
+}
+
+function migrateShortcuts(shortcuts: Shortcuts): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const chat = shortcuts.chat as any;
+  if (chat.navigateToSearch && !chat.focusQuickPrompt) {
+    chat.focusQuickPrompt = chat.navigateToSearch;
+    delete chat.navigateToSearch;
+    chrome.storage.sync.set({ shortcuts });
+  }
 }
 
 export function saveShortcuts(shortcuts: Shortcuts): Promise<void> {

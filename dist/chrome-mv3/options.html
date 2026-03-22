@@ -201,7 +201,7 @@
       color: #856404;
     }
   </style>
-  <script type="module" crossorigin src="/chunks/options-DY1kcUgU.js"></script>
+  <script type="module" crossorigin src="/chunks/options-DhcRxW7V.js"></script>
 </head>
 <body>
   <div class="container">
@@ -214,6 +214,15 @@
       <div id="deepDiveModes"></div>
       <div class="note">
         💡 Each mode has id (shown in dropdown) and prompt (appended when deep diving). Use ?mode_id=xxx in URL to specify mode.
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">Quick Prompts</h2>
+      <p class="shortcut-label" style="margin-bottom: 12px;">プルダウンから選択して即送信できるプロンプト一覧。</p>
+      <div id="quickPrompts"></div>
+      <div class="note">
+        💡 入力エリア横のボタンから選択すると、テキストエリアに入力して自動送信する。ページ遷移なし。
       </div>
     </div>
 
@@ -234,9 +243,9 @@
     <div class="section">
       <h2 class="section-title">Chat Screen</h2>
       <div class="shortcut-item">
-        <div class="shortcut-label">Navigate to search screen</div>
+        <div class="shortcut-label">Focus quick prompt</div>
         <div class="shortcut-input">
-          <input type="text" id="chat.navigateToSearch" readonly placeholder="Click to set key">
+          <input type="text" id="chat.focusQuickPrompt" readonly placeholder="Click to set key">
         </div>
       </div>
       <div class="shortcut-item">

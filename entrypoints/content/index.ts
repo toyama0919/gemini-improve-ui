@@ -7,6 +7,7 @@ import { showMap, resetMapMode } from '../../src/map';
 import { initializeSearchPage, isSearchPage } from '../../src/search';
 import { exitHistorySelectionMode } from '../../src/history';
 import { initializeDOMAnalyzer } from '../../src/dom-analyzer';
+import { initializeQuickPrompts } from '../../src/quick-prompts';
 
 export default defineContentScript({
   matches: [
@@ -83,6 +84,7 @@ function initialize(): void {
         initializeSearchAutocomplete();
         if (!isSearchPage()) {
           showMap();
+          initializeQuickPrompts();
         }
         document.getElementById('gemini-export-note-button')?.remove();
         initializeExport();
@@ -98,6 +100,7 @@ function initialize(): void {
   } else {
     initializeChatPage();
     initializeDeepDive();
+    initializeQuickPrompts();
     setTimeout(() => {
       initializeExport();
     }, 1500);
