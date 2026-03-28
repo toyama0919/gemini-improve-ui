@@ -107,7 +107,7 @@ function handleChatPageKeydown(event: KeyboardEvent): boolean {
     }
   }
 
-  if (event.code === 'Home' && !event.metaKey && !event.ctrlKey && !isInInput) {
+  if (event.code === 'Home' && !event.metaKey && !event.ctrlKey) {
     event.preventDefault();
     saveNote(event.shiftKey);
     return true;
