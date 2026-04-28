@@ -10,10 +10,7 @@ import { initializeDOMAnalyzer } from '../../src/dom-analyzer';
 import { initializeQuickPrompts } from '../../src/quick-prompts';
 
 export default defineContentScript({
-  matches: [
-    'https://gemini.google.com/app*',
-    'https://gemini.google.com/search*',
-  ],
+  matches: ['https://gemini.google.com/*'],
   runAt: 'document_end',
 
   main() {
@@ -36,6 +33,10 @@ function applyCustomStyles(): void {
       display: none !important;
     }
     .side-nav-entry-container {
+      display: none !important;
+    }
+    /* Notebook sidebar list (any column; scoped selectors missed real DOM) */
+    project-sidenav-list {
       display: none !important;
     }
     chat-window {
