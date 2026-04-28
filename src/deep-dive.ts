@@ -48,13 +48,16 @@ function addDeepDiveButtons(): void {
         'table[data-path-to-node]'
       );
       tables.forEach((table) => {
-        const wrapper = table.closest<HTMLElement>('.table-block-component');
+        const wrapper = getTableBlockWrapper(table);
         if (wrapper) {
           const existing = wrapper.querySelector('.deep-dive-button-inline');
           if (existing) {
             if (existing.getAttribute('data-initialized') === SESSION_ID) return;
             existing.remove();
           }
+          wrapper
+            .querySelectorAll('.deep-dive-expand-button, .deep-dive-child-button')
+            .forEach((b) => b.remove());
           targets.push({
             type: 'table',
             element: wrapper,
@@ -82,13 +85,16 @@ function addDeepDiveButtons(): void {
         'table[data-path-to-node]'
       );
       tables.forEach((table) => {
-        const wrapper = table.closest<HTMLElement>('.table-block-component');
+        const wrapper = getTableBlockWrapper(table);
         if (wrapper) {
           const existing = wrapper.querySelector('.deep-dive-button-inline');
           if (existing) {
             if (existing.getAttribute('data-initialized') === SESSION_ID) return;
             existing.remove();
           }
+          wrapper
+            .querySelectorAll('.deep-dive-expand-button, .deep-dive-child-button')
+            .forEach((b) => b.remove());
           targets.push({
             type: 'table',
             element: wrapper,
@@ -200,12 +206,29 @@ function getOrphanParagraphGroups(
   return groups;
 }
 
+function getTableBlockWrapper(table: HTMLElement): HTMLElement | null {
+  return (
+    table.closest<HTMLElement>('.table-block-component') ??
+    table.closest<HTMLElement>('table-block') ??
+    table.closest<HTMLElement>('.table-block')
+  );
+}
+
+function isTableBlockWrapper(el: HTMLElement): boolean {
+  if (el.classList.contains('table-block-component')) return true;
+  if (el.tagName === 'TABLE-BLOCK') return true;
+  return (
+    el.classList.contains('table-block') &&
+    el.querySelector(':scope > .table-footer') !== null
+  );
+}
+
 function getSectionContent(heading: HTMLElement): string {
   let content = (heading.textContent?.trim() ?? '') + '\n\n';
   let current = heading.nextElementSibling as HTMLElement | null;
 
   while (current && !current.matches('h1, h2, h3, h4, h5, h6, hr')) {
-    if (current.classList.contains('table-block-component')) {
+    if (isTableBlockWrapper(current)) {
       current = current.nextElementSibling as HTMLElement | null;
       continue;
     }
@@ -232,6 +255,32 @@ function getTableContent(table: HTMLElement): string {
   });
 
   return content.trim();
+}
+
+function getTableRowMarkdown(table: HTMLElement, row: HTMLTableRowElement): string {
+  const rowLine = (r: HTMLTableRowElement): string => {
+    const cells = r.querySelectorAll('td, th');
+    const cellTexts = Array.from(cells).map((cell) =>
+      cell.textContent?.trim() ?? ''
+    );
+    return '| ' + cellTexts.join(' | ') + ' |';
+  };
+
+  const sepLine = (r: HTMLTableRowElement): string => {
+    const n = r.querySelectorAll('td, th').length;
+    return '| ' + Array.from({ length: n }, () => '---').join(' | ') + ' |';
+  };
+
+  const thead = table.querySelector('thead');
+  const headerRow =
+    thead?.querySelector<HTMLTableRowElement>('tr') ??
+    table.querySelector<HTMLTableRowElement>('tr');
+
+  if (!headerRow || thead?.contains(row)) {
+    return [rowLine(row), sepLine(row)].join('\n').trim();
+  }
+
+  return [rowLine(headerRow), sepLine(headerRow), rowLine(row)].join('\n').trim();
 }
 
 function getListContent(list: HTMLElement): string {
@@ -288,7 +337,7 @@ function addDeepDiveButton(target: DeepDiveTarget): void {
   });
 
   let expandButton: HTMLButtonElement | null = null;
-  if (target.type === 'section' || target.type === 'list') {
+  if (target.type === 'section' || target.type === 'list' || target.type === 'table') {
     expandButton = createExpandButton(target);
   }
 
@@ -305,8 +354,10 @@ function addDeepDiveButton(target: DeepDiveTarget): void {
       const copyButton = footer.querySelector('.copy-button');
       if (copyButton) {
         footer.insertBefore(button, copyButton);
+        if (expandButton) footer.insertBefore(expandButton, copyButton);
       } else {
         footer.appendChild(button);
+        if (expandButton) footer.appendChild(expandButton);
       }
     }
   } else if (target.type === 'blockquote') {
@@ -383,7 +434,7 @@ function expandChildButtons(target: DeepDiveTarget): void {
     let current = heading.nextElementSibling as HTMLElement | null;
 
     while (current && !current.matches('h1, h2, h3, h4, h5, h6, hr')) {
-      if (current.classList.contains('table-block-component')) {
+      if (isTableBlockWrapper(current)) {
         current = current.nextElementSibling as HTMLElement | null;
         continue;
       }
@@ -410,10 +461,21 @@ function expandChildButtons(target: DeepDiveTarget): void {
         addChildButton(item);
       }
     });
+  } else if (target.type === 'table') {
+    const table = target.element.querySelector<HTMLElement>('table[data-path-to-node]');
+    if (!table) return;
+    table.querySelectorAll<HTMLTableRowElement>('tr').forEach((tr) => {
+      if (!tr.querySelector('.deep-dive-child-button')) {
+        addChildButton(tr, () => getTableRowMarkdown(table, tr));
+      }
+    });
   }
 }
 
-function addChildButton(element: HTMLElement): void {
+function addChildButton(
+  element: HTMLElement,
+  getContent: () => string = () => element.textContent?.trim() ?? ''
+): void {
   element.style.position = 'relative';
 
   const button = document.createElement('button');
@@ -438,7 +500,7 @@ function addChildButton(element: HTMLElement): void {
   const childTarget: DeepDiveTarget = {
     type: 'child',
     element,
-    getContent: () => element.textContent?.trim() ?? '',
+    getContent,
   };
 
   button.addEventListener('click', (e) => {
@@ -468,7 +530,7 @@ function collapseChildButtons(target: DeepDiveTarget): void {
     const heading = target.element;
     let current = heading.nextElementSibling as HTMLElement | null;
     while (current && !current.matches('h1, h2, h3, h4, h5, h6, hr')) {
-      if (current.classList.contains('table-block-component')) {
+      if (isTableBlockWrapper(current)) {
         current = current.nextElementSibling as HTMLElement | null;
         continue;
       }
@@ -478,6 +540,10 @@ function collapseChildButtons(target: DeepDiveTarget): void {
       current = current.nextElementSibling as HTMLElement | null;
     }
   } else if (target.type === 'list') {
+    target.element
+      .querySelectorAll('.deep-dive-child-button')
+      .forEach((btn) => btn.remove());
+  } else if (target.type === 'table') {
     target.element
       .querySelectorAll('.deep-dive-child-button')
       .forEach((btn) => btn.remove());
