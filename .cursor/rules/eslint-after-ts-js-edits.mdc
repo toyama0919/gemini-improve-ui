@@ -1,0 +1,11 @@
+---
+description: Run ESLint after changing TypeScript or JavaScript
+globs: "**/*.{ts,tsx,js,mjs,cjs}"
+alwaysApply: false
+---
+
+# ESLint after edits
+
+When you change or add code under these globs, run `npm run lint` before considering the task done. Fix all reported issues.
+
+Use `npm run lint:fix` when fixes are clearly safe. If the project skill applies, you can use lint-and-build / lint-typescript instead of ad-hoc runs.
