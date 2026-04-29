@@ -1,9 +1,12 @@
 ---
 description: Chrome extension for Gemini UI — selectors, settings, async, dev workflow
-alwaysApply: true
+alwaysApply: false
+globs: "**/*.{ts,tsx,js,mjs,cjs,html}"
 ---
 
 # Chrome Extension for Gemini UI
+
+Orientation: `.cursor/rules/repo-map.mdc` (structure). Do not paste full `dist/` bundles into answers.
 
 ## Core Rules
 
@@ -14,7 +17,7 @@ const el = document.querySelector('[aria-label*="Foo"]') ||
            document.querySelector('.foo');
 ```
 
-**Settings**: Define defaults in `settings.js` → Add UI in `options.html` → Implement save logic in `options.js` → Persist with `chrome.storage.sync`
+**Settings**: Defaults in `src/settings.ts` → UI `entrypoints/options/index.html` → save/load in `entrypoints/options/main.ts` → `chrome.storage.sync`
 
 **Async Waiting**: Use `setInterval` with max 10 retries at 200ms-2000ms intervals
 

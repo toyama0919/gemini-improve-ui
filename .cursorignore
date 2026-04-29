@@ -1,0 +1,12 @@
+# Build & deps — large / redundant for agent context
+dist/
+node_modules/
+.wxt/
+
+# Dev Chrome profile (MCP / dev.sh)
+.chrome-devtools-mcp/
+agent-chrome-profile/
+*-chrome-profile/
+
+# Scratch / local notes (see .gitignore)
+tmp/

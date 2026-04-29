@@ -1,0 +1,30 @@
+---
+description: Repo layout index — use when exploring or changing this extension
+alwaysApply: false
+---
+
+# gemini-improve-ui map
+
+**Stack**: WXT 3 (Chrome MV3), TypeScript, content script on `https://gemini.google.com/*`. Details: root `README.md`.
+
+| Path | Role |
+| --- | --- |
+| `entrypoints/content/index.ts` | Content script entry — wires all `src/*` init, custom CSS injection |
+| `entrypoints/options/` | Options page (`index.html`, `main.ts`) |
+| `wxt.config.ts` | Extension manifest, permissions, WXT runner (Chrome path, debug port) |
+| `src/settings.ts` | Defaults + `chrome.storage.sync` keys |
+| `src/keyboard.ts` | Shortcuts, action button position |
+| `src/chat.ts` | Chat page behavior |
+| `src/autocomplete.ts` | Autocomplete + search-field autocomplete |
+| `src/deep-dive.ts` | Deep Dive mode |
+| `src/export.ts` | Chat → YAML/Markdown export, save flow |
+| `src/map.ts` | Turn map / scroll UI |
+| `src/search.ts` | Search page integration |
+| `src/history.ts` | History selection mode |
+| `src/dom-analyzer.ts` | DOM export / analysis (e.g. Ctrl+Shift+D) |
+| `src/quick-prompts.ts` | Quick prompt buttons |
+| `src/types.d.ts` | Ambient / shared types |
+| `dev.sh` | Debug Chrome + MCP workflow |
+| `eslint.config.js` | ESLint flat config |
+
+**External refs**: [WXT](https://wxt.dev/), [Chrome extensions](https://developer.chrome.com/docs/extensions).
