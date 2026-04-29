@@ -32,10 +32,11 @@ tmp/
 *.swo
 *~
 
-# Cursor (except mcp.json and skills which are shared)
+# Cursor (except mcp.json, skills, rules — shared / team defaults)
 .cursor/*
 !.cursor/mcp.json
 !.cursor/skills/
+!.cursor/rules/
 
 # Temporary files
 *.log
