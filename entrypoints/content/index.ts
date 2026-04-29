@@ -49,6 +49,42 @@ function applyCustomStyles(): void {
       margin-left: 0 !important;
       margin-right: auto !important;
     }
+    /*
+     * 表を会話カラム幅いっぱいに使う（狭い .table-content スクロール窓をやめる）。
+     * 列が多い場合はセル折り返しで収め、横スクロールより先に幅を確保する。
+     */
+    .conversation-container .markdown-main-panel table-block,
+    .conversation-container .markdown-main-panel .table-block-component,
+    .conversation-container .markdown-main-panel .table-block,
+    chat-window .markdown-main-panel table-block,
+    chat-window .markdown-main-panel .table-block-component,
+    chat-window .markdown-main-panel .table-block {
+      display: block !important;
+      width: 100% !important;
+      max-width: none !important;
+      box-sizing: border-box !important;
+    }
+    .conversation-container .markdown-main-panel .table-content,
+    chat-window .markdown-main-panel .table-content {
+      width: 100% !important;
+      max-width: none !important;
+      overflow-x: visible !important;
+      box-sizing: border-box !important;
+    }
+    .conversation-container .markdown-main-panel table[data-path-to-node],
+    chat-window .markdown-main-panel table[data-path-to-node] {
+      width: 100% !important;
+      max-width: none !important;
+      table-layout: fixed !important;
+      box-sizing: border-box !important;
+    }
+    .conversation-container .markdown-main-panel table[data-path-to-node] th,
+    .conversation-container .markdown-main-panel table[data-path-to-node] td,
+    chat-window .markdown-main-panel table[data-path-to-node] th,
+    chat-window .markdown-main-panel table[data-path-to-node] td {
+      overflow-wrap: anywhere !important;
+      word-break: break-word !important;
+    }
   `;
   document.head.appendChild(style);
 }

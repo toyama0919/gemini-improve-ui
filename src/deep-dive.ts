@@ -257,30 +257,12 @@ function getTableContent(table: HTMLElement): string {
   return content.trim();
 }
 
-function getTableRowMarkdown(table: HTMLElement, row: HTMLTableRowElement): string {
-  const rowLine = (r: HTMLTableRowElement): string => {
-    const cells = r.querySelectorAll('td, th');
-    const cellTexts = Array.from(cells).map((cell) =>
-      cell.textContent?.trim() ?? ''
-    );
-    return '| ' + cellTexts.join(' | ') + ' |';
-  };
-
-  const sepLine = (r: HTMLTableRowElement): string => {
-    const n = r.querySelectorAll('td, th').length;
-    return '| ' + Array.from({ length: n }, () => '---').join(' | ') + ' |';
-  };
-
-  const thead = table.querySelector('thead');
-  const headerRow =
-    thead?.querySelector<HTMLTableRowElement>('tr') ??
-    table.querySelector<HTMLTableRowElement>('tr');
-
-  if (!headerRow || thead?.contains(row)) {
-    return [rowLine(row), sepLine(row)].join('\n').trim();
-  }
-
-  return [rowLine(headerRow), sepLine(headerRow), rowLine(row)].join('\n').trim();
+function getTableRowMarkdown(_table: HTMLElement, row: HTMLTableRowElement): string {
+  const cells = row.querySelectorAll('td, th');
+  const cellTexts = Array.from(cells).map((cell) =>
+    cell.textContent?.trim() ?? ''
+  );
+  return '| ' + cellTexts.join(' | ') + ' |';
 }
 
 function getListContent(list: HTMLElement): string {
@@ -774,6 +756,13 @@ function addDeepDiveStyles(): void {
   const style = document.createElement('style');
   style.id = styleId;
   style.textContent = `
+    /* 表の幅は entrypoints/content の applyCustomStyles で会話カラムいっぱいに指定 */
+    .markdown-main-panel .table-content {
+      scroll-padding-inline: 32px;
+    }
+    .markdown-main-panel tr .deep-dive-child-button {
+      scroll-margin-inline: 40px;
+    }
     .deep-dive-button-inline {
       display: inline-flex;
       align-items: center;
