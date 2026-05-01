@@ -76,7 +76,7 @@ Inline buttons to follow up on parts of a Gemini reply. Buttons appear on:
 **Usage**
 
 1. Click ↳ — sends quote + prompt
-2. `Ctrl+click` — quote only (you type the prompt)
+2. With the ↳ button focused, press the **Quick prompt focus** shortcut (default `Insert`) — quote only (you type the prompt). In the input, that shortcut still toggles quick prompt focus as before.
 
 **Modes:** Pick a prompt from the dropdown next to the input, or pass `?mode_id=xxx` in the URL. Configure modes on the options page.
 

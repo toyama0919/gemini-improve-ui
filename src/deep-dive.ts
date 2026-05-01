@@ -1,5 +1,7 @@
 // Deep dive functionality for Gemini responses
 
+import { isShortcut } from './settings';
+
 interface DeepDiveMode {
   id: string;
   prompt?: string;
@@ -295,10 +297,17 @@ function addDeepDiveButton(target: DeepDiveTarget): void {
   button.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    insertDeepDiveQuery(target, e.ctrlKey);
+    void insertDeepDiveQuery(target, false);
   });
 
   button.addEventListener('keydown', (e) => {
+    if (isShortcut(e, 'chat.focusQuickPrompt')) {
+      if (!e.isTrusted || e.isComposing) return;
+      e.preventDefault();
+      e.stopPropagation();
+      void insertDeepDiveQuery(target, true);
+      return;
+    }
     if (e.key === 'ArrowRight' && !e.altKey && !e.ctrlKey && !e.metaKey) {
       const expandBtn = target.element.querySelector<HTMLButtonElement>('.deep-dive-expand-button');
       if (expandBtn) {
@@ -488,10 +497,17 @@ function addChildButton(
   button.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    insertDeepDiveQuery(childTarget, e.ctrlKey);
+    void insertDeepDiveQuery(childTarget, false);
   });
 
   button.addEventListener('keydown', (e) => {
+    if (isShortcut(e, 'chat.focusQuickPrompt')) {
+      if (!e.isTrusted || e.isComposing) return;
+      e.preventDefault();
+      e.stopPropagation();
+      void insertDeepDiveQuery(childTarget, true);
+      return;
+    }
     if (e.key === 'ArrowLeft' && !e.altKey && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
       e.stopPropagation();

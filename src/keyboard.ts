@@ -120,13 +120,20 @@ function handleChatPageKeydown(event: KeyboardEvent): boolean {
   }
 
   if (isShortcut(event, 'chat.focusQuickPrompt')) {
-    event.preventDefault();
-    if (isQuickPromptFocused()) {
-      focusTextarea();
-    } else {
-      focusQuickPromptSelector();
+    const focused = document.activeElement as HTMLElement | null;
+    const isDeepDiveButton =
+      focused &&
+      (focused.classList?.contains('deep-dive-button-inline') ||
+        focused.getAttribute('data-action') === 'deep-dive');
+    if (!isDeepDiveButton) {
+      event.preventDefault();
+      if (isQuickPromptFocused()) {
+        focusTextarea();
+      } else {
+        focusQuickPromptSelector();
+      }
+      return true;
     }
-    return true;
   }
 
   if (isShortcut(event, 'chat.toggleSidebar')) {
