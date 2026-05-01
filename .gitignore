@@ -36,7 +36,7 @@ tmp/
 .cursor/*
 !.cursor/mcp.json
 !.cursor/skills/
-!.cursor/rules/
+!.cursor/rules
 
 # Temporary files
 *.log
