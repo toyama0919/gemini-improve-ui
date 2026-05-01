@@ -1,145 +1,146 @@
 # Gemini Chat UI Improvements
 
-Google Gemini の Web UI を強化する Chrome 拡張機能。キーボードショートカット、チャット幅調整、Deep Dive、会話マップなどを追加する。
+Chrome extension that enhances the Google Gemini web UI: keyboard shortcuts, chat width, Deep Dive, conversation map, and more.
 
 ## Features
 
-- カスタマイズ可能なキーボードショートカット
-- チャットエリア幅の調整（600px - 1600px）
-- キーボードによるチャット履歴ナビゲーション
-- 検索結果のキーボードブラウジング
-- サイドバー要素の非表示（Gems リスト、My Stuff セクション）
-- コピーボタンへのクイックアクセス
-- **Deep Dive** — レスポンス内のセクション・リスト・テーブル・引用を深掘り
-- **会話マップ** — 右サイドに固定表示されるチャットアウトライン（スクロール位置ハイライト付き）
-- **クイックプロンプト** — プルダウンから定型プロンプトを選択して即送信（ページ遷移なし）
-- **URL クエリパラメータ** — `?q=...` で新規チャットに質問を事前入力、`?qt=...` で既存会話スレッドにも入力可能
-- オートコンプリート
-- DOM 構造分析（AI 開発者向け）
+- Customizable keyboard shortcuts
+- Adjustable chat area width (600px–1600px)
+- Keyboard navigation of chat history
+- Keyboard browsing of search results
+- Hide sidebar clutter (Gems list, My Stuff section)
+- Quick access to copy buttons
+- **Deep Dive** — drill into sections, lists, tables, and quotes inside responses
+- **Conversation map** — outline panel on the right with scroll-position highlight
+- **Quick prompts** — pick a canned prompt from a dropdown and send without leaving the page
+- **URL query parameters** — `?q=...` pre-fills a new chat; `?qt=...` pre-fills on any thread
+- Autocomplete
+- DOM structure export (for extension / AI-assisted development)
 
 ## Keyboard Shortcuts
 
-すべてのショートカットは拡張のオプションページでカスタマイズ可能。以下はデフォルト値。
+All shortcuts can be changed on the extension options page. Defaults below.
 
-### チャット画面
+### Chat view
 
-| キー | 動作 |
-|------|------|
-| `Insert` | 検索画面へ移動 |
-| `Home` | サイドバーの開閉 |
-| `End` | テキストエリア → アクションボタン → サイドバー → テキストエリアのサイクル |
-| `PageUp` / `PageDown` | チャットエリアのスクロール |
-| `↑` / `↓` | 履歴選択モードでのナビゲーション |
-| `Enter` | 選択した履歴を開く |
-| `Esc` | 履歴選択モード終了 |
+| Key | Action |
+|-----|--------|
+| `Insert` | Go to search |
+| `Home` | Toggle sidebar |
+| `End` | Cycle: textarea → action buttons → sidebar → textarea |
+| `PageUp` / `PageDown` | Scroll chat area |
+| `↑` / `↓` | Navigate in history-picker mode |
+| `Enter` | Open selected history item |
+| `Esc` | Exit history-picker mode |
 
-### 検索画面
+### Search view
 
-| キー | 動作 |
-|------|------|
-| `↑` / `↓` | 検索結果のナビゲーション |
-| `Enter` | 選択した検索結果を開く |
-| `PageUp` / `PageDown` | ページスクロール |
+| Key | Action |
+|-----|--------|
+| `↑` / `↓` | Move through search results |
+| `Enter` | Open selected result |
+| `PageUp` / `PageDown` | Scroll page |
 
-### Deep Dive ボタン
+### Deep Dive buttons
 
-| キー | 動作 |
-|------|------|
-| `↑` / `↓`（テキストエリア空） | Deep Dive ボタンにフォーカス |
-| `↑` / `↓`（ボタンフォーカス中） | 他の Deep Dive ボタンへ移動 |
-| `→` | 子ボタンの展開/折りたたみ（+/- トグル） |
-| `←` | 引用テンプレートメニューの表示/非表示 |
-| `Enter` | フォーカス中のボタンをクリック |
+| Key | Action |
+|-----|--------|
+| `↑` / `↓` (empty textarea) | Focus Deep Dive buttons |
+| `↑` / `↓` (button focused) | Move between Deep Dive buttons |
+| `→` | Expand/collapse child buttons (+/− toggle) |
+| `←` | Show/hide quote template menu |
+| `Enter` | Activate focused button |
 
-### オートコンプリート
+### Autocomplete
 
-| キー | 動作 |
-|------|------|
-| `Tab` | 選択中のサジェストで補完 |
-| `↑` / `↓` | サジェストの移動 |
-| `Esc` | メニューを閉じる |
+| Key | Action |
+|-----|--------|
+| `Tab` | Accept selected suggestion |
+| `↑` / `↓` | Move in suggestion list |
+| `Esc` | Close menu |
 
-### AI 開発者向け
+### Extension development
 
-- `Ctrl+Shift+D`: ページの DOM 構造をクリップボードにコピー（AI 分析用）
+- `Ctrl+Shift+D`: Copy page DOM structure to clipboard (for AI / selector work)
 
 ## Deep Dive
 
-Gemini のレスポンスをインラインボタンで深掘りする機能。以下の要素にボタンが表示される:
+Inline buttons to follow up on parts of a Gemini reply. Buttons appear on:
 
-- **セクション見出し** (h1-h6)
-- **リスト** (ol/ul)
-- **テーブル**
-- **引用** (blockquote)
-- **孤立段落**（見出しに属さないパラグラフ群）
+- **Section headings** (h1–h6)
+- **Lists** (ol/ul)
+- **Tables**
+- **Block quotes**
+- **Orphan paragraphs** (blocks not under a heading)
 
-**使い方:**
+**Usage**
 
-1. ↳ ボタンをクリック → 引用 + プロンプトを送信
-2. `Ctrl+クリック` → 引用のみ（プロンプトは自分で入力）
+1. Click ↳ — sends quote + prompt
+2. `Ctrl+click` — quote only (you type the prompt)
 
-**モード:** 入力欄横のドロップダウンでプロンプトを切替。URL に `?mode_id=xxx` を付けても指定可能。オプションページで設定。
+**Modes:** Pick a prompt from the dropdown next to the input, or pass `?mode_id=xxx` in the URL. Configure modes on the options page.
 
-**細かい選択:**
+**Fine-grained selection**
 
-1. `→` キーで `+` を `-` に切り替え、子要素ごとの ↳ ボタンを展開
-2. 個別の段落やリストアイテムを選択して深掘り
-3. `→` キーで再度トグルして折りたたみ
-4. `←` キーで引用テンプレートメニューを表示
+1. Press `→` to flip `+`/`−` and expand per-child ↳ buttons
+2. Select individual paragraphs or list items to drill down
+3. Press `→` again to collapse
+4. Press `←` for the quote template menu
 
-## 会話マップ
+## Conversation map
 
-チャット画面の右側に固定表示されるアウトラインパネル。
+Outline panel fixed on the right of the chat view.
 
-- チャットページで常に表示
-- 現在表示中のチャットターンをハイライト（IntersectionObserver ベース）
-- クリックでそのターンにスムーズスクロール
-- 新しいターン追加時に自動更新
+- Always visible on chat pages
+- Highlights the turn in view (IntersectionObserver)
+- Click a row to smooth-scroll to that turn
+- Updates when new turns are added
 
-## URL クエリパラメータ
+## URL query parameters
 
-URL に `q` パラメータを付けて Gemini を開くと、質問が事前入力される。
-
-```
-https://gemini.google.com/app?q=Pythonでソートアルゴリズムを教えて
-```
-
-既存の会話スレッド（`/app/xxxxx`）に追加質問したい場合は `qt` パラメータを使う。
+Append `q` to pre-fill the prompt when opening Gemini.
 
 ```
-https://gemini.google.com/app/abc123?qt=続きを教えて
+https://gemini.google.com/app?q=Teach%20me%20sort%20algorithms%20in%20Python
 ```
 
-| パラメータ | 対象パス | 説明 |
-|-----------|---------|------|
-| `q` | `/app` のみ | 新規チャットにプロンプトを入力 |
-| `qt` | 任意の `/app/...` | 既存スレッド含む全パスでプロンプトを入力 |
-| `send` | 共通 | `true`（デフォルト）で自動送信、`false` で入力のみ |
+To add a follow-up on an existing thread (`/app/xxxx`), use `qt`:
+
+```
+https://gemini.google.com/app/abc123?qt=Explain%20this%20result%20in%20more%20detail
+```
+
+| Parameter | Path | Behavior |
+|-----------|------|----------|
+| `q` | `/app` only | Pre-fill prompt on a **new** chat |
+| `qt` | Any `/app/...` | Pre-fill prompt (including existing threads) |
+| `send` | Any | `true` (default) auto-sends; `false` fills only |
 
 ```bash
-# ターミナルから
+# From a terminal
 open "https://gemini.google.com/app?q=Debug this error: $(cat error.log)"
-# 既存会話に追加
-open "https://gemini.google.com/app/abc123?qt=この結果をもっと詳しく"
+# Append to an existing thread
+open "https://gemini.google.com/app/abc123?qt=Explain this result in more detail"
 ```
 
-## クイックプロンプト
+## Quick prompts
 
-入力エリア横のボタンからプルダウンメニューを開き、定型プロンプトを選択して即送信できる。ページ遷移は発生しない。
+Open the menu from the button next to the input, pick a template, send—no navigation.
 
-デフォルトのプロンプト:
+Default templates (Japanese in the shipped build):
+
 - ここまでの内容をまとめて
 - 続きを教えて
 - もっと詳しく教えて
 - 具体例を挙げて
 
-設定画面（Options）でプロンプトの追加・編集・削除が可能。
+Add, edit, or remove prompts on the Options page.
 
 ## Settings
 
-1. 拡張アイコンを右クリック → "Options"
-2. キーボードショートカット、チャット幅、Deep Dive モード、クイックプロンプト等を設定
-3. "Save Settings" で保存
+1. Right-click the extension icon → **Options**
+2. Adjust shortcuts, chat width, Deep Dive modes, quick prompts, etc.
+3. Click **Save Settings**
 
 ## Installation
 
@@ -150,60 +151,60 @@ npm install
 npm run build
 ```
 
-1. Chrome で `chrome://extensions/` を開く
-2. 右上の "Developer mode" を有効化
-3. "Load unpacked" をクリック
-4. `dist/chrome-mv3/` ディレクトリを選択
+1. Open `chrome://extensions/` in Chrome
+2. Turn on **Developer mode** (top right)
+3. Click **Load unpacked**
+4. Choose the `dist/chrome-mv3/` directory
 
 ## Development
 
-WXT ベースのビルドシステムを使用。
+Built with [WXT](https://wxt.dev/).
 
 ```bash
-./dev.sh dev      # WXT dev server + Chrome 起動（ホットリロード）
-./dev.sh stop     # Chrome 停止
-./dev.sh status   # 接続確認
+./dev.sh dev      # WXT dev server + Chrome (hot reload)
+./dev.sh stop     # Stop Chrome
+./dev.sh status   # Connection check
 ```
 
-### ファイル構成
+### Layout
 
 ```
 gemini-improve-ui/
-├── wxt.config.ts           # WXT 設定
+├── wxt.config.ts           # WXT config
 ├── package.json
-├── dev.sh                  # 開発ヘルパースクリプト
+├── dev.sh                  # Dev helper
 ├── entrypoints/
-│   ├── content/index.ts    # Content Script エントリポイント
-│   └── options/main.ts     # オプションページ
+│   ├── content/index.ts    # Content script entry
+│   └── options/main.ts     # Options page
 ├── src/
-│   ├── settings.ts         # 設定管理・ストレージ
-│   ├── keyboard.ts         # キーボードイベントハンドラ
-│   ├── chat.ts             # チャット UI（テキストエリア、サイドバー、スクロール）
-│   ├── deep-dive.ts        # Deep Dive ボタン
-│   ├── map.ts              # 会話マップパネル
-│   ├── history.ts          # チャット履歴選択モード
-│   ├── search.ts           # 検索ページ
-│   ├── autocomplete.ts     # オートコンプリート
-│   ├── export.ts           # Zettelkasten エクスポート
-│   └── dom-analyzer.ts     # DOM 構造分析
-├── public/icons/           # 拡張アイコン
-└── .cursor/mcp.json        # Chrome DevTools MCP 設定
+│   ├── settings.ts         # Settings + storage
+│   ├── keyboard.ts         # Keyboard handlers
+│   ├── chat.ts             # Chat UI (textarea, sidebar, scroll)
+│   ├── deep-dive.ts        # Deep Dive buttons
+│   ├── map.ts              # Conversation map
+│   ├── history.ts          # Chat history picker
+│   ├── search.ts           # Search page
+│   ├── autocomplete.ts     # Autocomplete
+│   ├── export.ts           # Zettelkasten export
+│   └── dom-analyzer.ts     # DOM export / analysis
+├── public/icons/           # Extension icons
+└── .cursor/mcp.json        # Chrome DevTools MCP (optional)
 ```
 
 ### Chrome DevTools MCP
 
-Cursor で Chrome DevTools MCP を使ったデバッグが可能。`.cursor/mcp.json` に設定済み。
+You can debug with Chrome DevTools MCP from Cursor; see `.cursor/mcp.json`.
 
 ```bash
-./dev.sh dev          # Chrome + MCP 接続
-curl http://localhost:9222/json/list   # 接続確認
+./dev.sh dev          # Chrome + MCP
+curl http://localhost:9222/json/list   # Sanity check
 ```
 
-### セレクター戦略
+### Selector strategy
 
-1. ARIA 属性（`aria-label`, `role`）— 最も安定
-2. セマンティック属性（`data-test-id`）— 中程度
-3. クラス名 — 最終手段、フォールバック
+1. ARIA (`aria-label`, `role`) — most stable
+2. Semantic hooks (`data-test-id`) — medium
+3. Class names — last resort / fallback
 
 ## License
 

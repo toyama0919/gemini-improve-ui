@@ -1,0 +1,9 @@
+---
+description: Use English for assistant output and new repo text unless the user asks for Japanese
+alwaysApply: true
+---
+
+# Language (default: English)
+
+- **Assistant replies**, **edits to docs and comments in this repo**, **commit messages**, and **new user-facing strings you introduce** → **English**, unless the user explicitly asks for Japanese (or another language).
+- **Existing Japanese strings** in code (e.g. default quick prompts) → leave as-is when not changing behavior; document them in English in README if you list them.
