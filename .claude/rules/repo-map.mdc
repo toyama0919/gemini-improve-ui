@@ -16,7 +16,9 @@ alwaysApply: false
 | `src/keyboard.ts` | Shortcuts, action button position |
 | `src/chat.ts` | Chat page behavior |
 | `src/autocomplete.ts` | Autocomplete + search-field autocomplete |
-| `src/deep-dive.ts` | Deep Dive mode |
+| `src/deep-dive/` | Deep Dive mode (`index.ts`, targets, buttons, styles, …) |
+| `src/styles/` | Injected CSS strings (`chatLayout`, `mapPanel`, `deepDive`) |
+| `src/surface-reinit-delay.ts` | Shared delay (ms) after SPA navigation / deferred UI |
 | `src/export.ts` | Chat → YAML/Markdown export, save flow |
 | `src/map.ts` | Turn map / scroll UI |
 | `src/search.ts` | Search page integration |

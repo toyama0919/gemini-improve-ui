@@ -9,7 +9,8 @@ node_modules/
 # WXT internal (generated types, cache)
 .wxt/
 
-# Build output
+# WXT: commit prod folder for chrome://extensions → Update; ignore dev build and release zips
+dist/chrome-mv3-dev/
 dist/*.zip
 
 # Old output dir (replaced by dist/)

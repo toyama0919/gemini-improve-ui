@@ -1,6 +1,7 @@
 // Chat UI functionality (textarea, sidebar, scrolling, copy buttons)
 
 import { initializeAutocomplete } from './autocomplete';
+import { SURFACE_REINIT_DELAY_MS } from './surface-reinit-delay';
 
 let cachedChatArea: Element | null = null;
 let chatAreaCacheTime = 0;
@@ -106,7 +107,7 @@ export function createNewChat(): void {
 export function reinitializeAfterNavigation(): void {
   setTimeout(() => {
     initializeAutocomplete();
-  }, 1500);
+  }, SURFACE_REINIT_DELAY_MS);
 }
 
 export function focusTextarea(): void {
@@ -299,7 +300,7 @@ export function initializeChatPage(): void {
 
   setTimeout(() => {
     initializeAutocomplete();
-  }, 1500);
+  }, SURFACE_REINIT_DELAY_MS);
 
   const observer = new MutationObserver(() => {
     const isStreaming = document.querySelector('[aria-busy="true"]');

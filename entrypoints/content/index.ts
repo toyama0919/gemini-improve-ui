@@ -8,13 +8,14 @@ import { initializeSearchPage, isSearchPage } from '../../src/search';
 import { exitHistorySelectionMode } from '../../src/history';
 import { initializeDOMAnalyzer } from '../../src/dom-analyzer';
 import { initializeQuickPrompts } from '../../src/quick-prompts';
+import { CHAT_LAYOUT_CUSTOM_CSS } from '../../src/styles/chatLayout';
+import { SURFACE_REINIT_DELAY_MS } from '../../src/surface-reinit-delay';
 
 export default defineContentScript({
   matches: ['https://gemini.google.com/*'],
   runAt: 'document_end',
 
   main() {
-    // Expose window globals used across modules
     window.rememberActionButtonPosition = rememberActionButtonPosition;
 
     initializeDOMAnalyzer();
@@ -28,85 +29,7 @@ function applyCustomStyles(): void {
 
   const style = document.createElement('style');
   style.id = styleId;
-  style.textContent = `
-    .gems-list-container {
-      display: none !important;
-    }
-    .side-nav-entry-container {
-      display: none !important;
-    }
-    /* Notebook sidebar list (any column; scoped selectors missed real DOM) */
-    project-sidenav-list {
-      display: none !important;
-    }
-    mat-drawer-content,
-    .mat-drawer-inner-container,
-    bard-sidenav-content {
-      min-width: 0 !important;
-    }
-    main.main {
-      min-width: 0 !important;
-      box-sizing: border-box !important;
-    }
-    chat-window {
-      box-sizing: border-box !important;
-      width: 100% !important;
-      min-width: 0 !important;
-      max-width: min(var(--chat-max-width, 900px), 100%) !important;
-      margin-left: 0 !important;
-      margin-right: auto !important;
-      overflow-wrap: anywhere !important;
-      word-break: break-word !important;
-    }
-    .conversation-container {
-      box-sizing: border-box !important;
-      min-width: 0 !important;
-      max-width: min(var(--chat-max-width, 900px), 100%) !important;
-      margin-left: 0 !important;
-      margin-right: auto !important;
-    }
-    chat-window .markdown-main-panel,
-    .conversation-container .markdown-main-panel,
-    chat-window .markdown,
-    .conversation-container .markdown {
-      min-width: 0 !important;
-      max-width: 100% !important;
-      overflow-wrap: anywhere !important;
-      word-break: break-word !important;
-    }
-    .conversation-container .markdown-main-panel table-block,
-    .conversation-container .markdown-main-panel .table-block-component,
-    .conversation-container .markdown-main-panel .table-block,
-    chat-window .markdown-main-panel table-block,
-    chat-window .markdown-main-panel .table-block-component,
-    chat-window .markdown-main-panel .table-block {
-      display: block !important;
-      width: 100% !important;
-      max-width: none !important;
-      box-sizing: border-box !important;
-    }
-    .conversation-container .markdown-main-panel .table-content,
-    chat-window .markdown-main-panel .table-content {
-      width: 100% !important;
-      max-width: none !important;
-      overflow-x: visible !important;
-      box-sizing: border-box !important;
-    }
-    .conversation-container .markdown-main-panel table[data-path-to-node],
-    chat-window .markdown-main-panel table[data-path-to-node] {
-      width: 100% !important;
-      max-width: none !important;
-      table-layout: fixed !important;
-      box-sizing: border-box !important;
-    }
-    .conversation-container .markdown-main-panel table[data-path-to-node] th,
-    .conversation-container .markdown-main-panel table[data-path-to-node] td,
-    chat-window .markdown-main-panel table[data-path-to-node] th,
-    chat-window .markdown-main-panel table[data-path-to-node] td {
-      overflow-wrap: anywhere !important;
-      word-break: break-word !important;
-    }
-  `;
+  style.textContent = CHAT_LAYOUT_CUSTOM_CSS;
   document.head.appendChild(style);
 }
 
@@ -118,6 +41,29 @@ function loadChatWidth(): void {
   chrome.storage.sync.get(['chatWidth'], (result) => {
     updateChatWidth(result.chatWidth || 900);
   });
+}
+
+/** After SPA navigation: autocomplete, export, map, quick prompts on chat routes */
+function scheduleSurfaceReinit(): void {
+  setTimeout(() => {
+    initializeAutocomplete();
+    initializeSearchAutocomplete();
+    document.getElementById('gemini-export-note-button')?.remove();
+    initializeExport();
+    if (!isSearchPage()) {
+      showMap();
+      initializeQuickPrompts();
+    }
+  }, SURFACE_REINIT_DELAY_MS);
+}
+
+/** First chat load: DOM settled before export hook + map panel */
+function scheduleInitialChatDeferredSurface(): void {
+  setTimeout(() => {
+    document.getElementById('gemini-export-note-button')?.remove();
+    initializeExport();
+    showMap();
+  }, SURFACE_REINIT_DELAY_MS);
 }
 
 function initialize(): void {
@@ -137,16 +83,7 @@ function initialize(): void {
       window.rememberActionButtonPosition?.(-1);
       resetMapMode();
 
-      setTimeout(() => {
-        initializeAutocomplete();
-        initializeSearchAutocomplete();
-        if (!isSearchPage()) {
-          showMap();
-          initializeQuickPrompts();
-        }
-        document.getElementById('gemini-export-note-button')?.remove();
-        initializeExport();
-      }, 1500);
+      scheduleSurfaceReinit();
     }
   }).observe(document, { subtree: true, childList: true });
 
@@ -159,12 +96,7 @@ function initialize(): void {
     initializeChatPage();
     initializeDeepDive();
     initializeQuickPrompts();
-    setTimeout(() => {
-      initializeExport();
-    }, 1500);
-    setTimeout(() => {
-      showMap();
-    }, 1500);
+    scheduleInitialChatDeferredSurface();
   }
 
   chrome.storage.onChanged.addListener((changes, namespace) => {

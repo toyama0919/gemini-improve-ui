@@ -180,7 +180,9 @@ gemini-improve-ui/
 │   ├── settings.ts         # Settings + storage
 │   ├── keyboard.ts         # Keyboard handlers
 │   ├── chat.ts             # Chat UI (textarea, sidebar, scroll)
-│   ├── deep-dive.ts        # Deep Dive buttons
+│   ├── deep-dive/          # Deep Dive (targets, buttons, styles, …)
+│   ├── styles/             # Injected CSS strings (chat layout, map, deep dive)
+│   ├── surface-reinit-delay.ts
 │   ├── map.ts              # Conversation map
 │   ├── history.ts          # Chat history picker
 │   ├── search.ts           # Search page
