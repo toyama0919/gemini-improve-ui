@@ -4,6 +4,22 @@ import {
   type DeepDiveTarget,
 } from './types';
 
+/** Quote insert: defer focus/caret so IME can attach after rewriting contenteditable (Chrome). */
+function deferFocusContenteditableEnd(textarea: HTMLElement): void {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      textarea.focus();
+      const range = document.createRange();
+      const sel = window.getSelection();
+      range.selectNodeContents(textarea);
+      range.collapse(false);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  });
+}
+
 export function writeToTextarea(query: string, autoSend: boolean): void {
   const textarea = document.querySelector<HTMLElement>(
     'div[contenteditable="true"][role="textbox"]'
@@ -22,14 +38,7 @@ export function writeToTextarea(query: string, autoSend: boolean): void {
     textarea.appendChild(p);
   });
 
-  textarea.focus();
-  const range = document.createRange();
-  const sel = window.getSelection();
-  range.selectNodeContents(textarea);
-  range.collapse(false);
-  sel?.removeAllRanges();
-  sel?.addRange(range);
-  textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  deferFocusContenteditableEnd(textarea);
 
   if (autoSend) {
     setTimeout(() => {
