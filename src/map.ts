@@ -2,10 +2,20 @@
 
 let mapMode = false;
 const MAP_PANEL_ID = 'gemini-map-panel';
-const MAP_STYLE_ID = 'gemini-map-styles';
+const MAP_STYLE_ID = 'gemini-map-styles-v3';
+
+/** Panel width + map `right` offset (`right: 16px`). */
+const MAP_PANEL_WIDTH_PX = 240;
+const MAP_PANEL_RIGHT_PX = 16;
+const MAP_CONTENT_RESERVE_PX = MAP_PANEL_WIDTH_PX + MAP_PANEL_RIGHT_PX;
+
+const MAP_BODY_CLASS = 'gemini-improve-ui-map-visible';
 
 function injectMapStyles(): void {
   if (document.getElementById(MAP_STYLE_ID)) return;
+  for (const id of ['gemini-map-styles', 'gemini-map-styles-v2'] as const) {
+    document.getElementById(id)?.remove();
+  }
   const style = document.createElement('style');
   style.id = MAP_STYLE_ID;
   style.textContent = `
@@ -72,6 +82,11 @@ function injectMapStyles(): void {
       font-size: 10px;
       opacity: 0.5;
       margin-right: 3px;
+    }
+    body.${MAP_BODY_CLASS} mat-drawer-content,
+    body.${MAP_BODY_CLASS} bard-sidenav-content {
+      padding-right: ${MAP_CONTENT_RESERVE_PX}px !important;
+      box-sizing: border-box !important;
     }
   `;
   document.head.appendChild(style);
@@ -250,6 +265,8 @@ export function showMap(): void {
   document.body.appendChild(panel);
   mapMode = true;
 
+  document.body.classList.add(MAP_BODY_CLASS);
+
   setupIntersectionObserver();
   startChatObserver();
 }
@@ -257,6 +274,9 @@ export function showMap(): void {
 export function resetMapMode(): void {
   stopChatObserver();
   stopIntersectionObserver();
+
+  document.body.classList.remove(MAP_BODY_CLASS);
+
   const panel = document.getElementById(MAP_PANEL_ID);
   if (panel) panel.remove();
   mapMode = false;

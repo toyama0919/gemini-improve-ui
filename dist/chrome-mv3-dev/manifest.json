@@ -12,8 +12,6 @@
   "host_permissions": [
     "https://gemini.google.com/*",
     "https://www.google.co.jp/*",
-    "https://gemini.google.com/app*",
-    "https://gemini.google.com/search*",
     "http://localhost/*"
   ],
   "commands": {

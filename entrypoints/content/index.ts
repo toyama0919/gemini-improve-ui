@@ -39,20 +39,41 @@ function applyCustomStyles(): void {
     project-sidenav-list {
       display: none !important;
     }
+    mat-drawer-content,
+    .mat-drawer-inner-container,
+    bard-sidenav-content {
+      min-width: 0 !important;
+    }
+    main.main {
+      min-width: 0 !important;
+      box-sizing: border-box !important;
+    }
     chat-window {
-      max-width: var(--chat-max-width, 900px) !important;
+      box-sizing: border-box !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      max-width: min(var(--chat-max-width, 900px), 100%) !important;
       margin-left: 0 !important;
       margin-right: auto !important;
+      overflow-wrap: anywhere !important;
+      word-break: break-word !important;
     }
     .conversation-container {
-      max-width: var(--chat-max-width, 900px) !important;
+      box-sizing: border-box !important;
+      min-width: 0 !important;
+      max-width: min(var(--chat-max-width, 900px), 100%) !important;
       margin-left: 0 !important;
       margin-right: auto !important;
     }
-    /*
-     * 表を会話カラム幅いっぱいに使う（狭い .table-content スクロール窓をやめる）。
-     * 列が多い場合はセル折り返しで収め、横スクロールより先に幅を確保する。
-     */
+    chat-window .markdown-main-panel,
+    .conversation-container .markdown-main-panel,
+    chat-window .markdown,
+    .conversation-container .markdown {
+      min-width: 0 !important;
+      max-width: 100% !important;
+      overflow-wrap: anywhere !important;
+      word-break: break-word !important;
+    }
     .conversation-container .markdown-main-panel table-block,
     .conversation-container .markdown-main-panel .table-block-component,
     .conversation-container .markdown-main-panel .table-block,
