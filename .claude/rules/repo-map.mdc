@@ -27,4 +27,4 @@ alwaysApply: false
 | `dev.sh` | Debug Chrome + MCP workflow |
 | `eslint.config.js` | ESLint flat config |
 
-**External refs**: [WXT](https://wxt.dev/), [Chrome extensions](https://developer.chrome.com/docs/extensions).
+**External refs**: [WXT llms.txt](https://wxt.dev/llms.txt) (canonical index for agents; deeper plain dump: [docs.txt](https://wxt.dev/knowledge/docs.txt)), [Chrome extensions](https://developer.chrome.com/docs/extensions).
