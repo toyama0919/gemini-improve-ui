@@ -129,6 +129,145 @@ export function focusTextarea(): void {
   }
 }
 
+const CLIPBOARD_HANDLED_SEARCH_KEY = 'gemini-improve-ui-clipboard-handled-search';
+const CLIPBOARD_FALLBACK_HOST_ID = 'gemini-improve-ui-clipboard-fallback';
+
+function isClipboardParamTruthy(raw: string | null): boolean {
+  if (raw === null) return false;
+  const v = raw.trim().toLowerCase();
+  return v === '' || v === '1' || v === 'true';
+}
+
+function stripClipboardParamFromUrl(): void {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has('clipboard')) return;
+  url.searchParams.delete('clipboard');
+  const search = url.searchParams.toString();
+  const next = `${url.pathname}${search ? `?${search}` : ''}${url.hash}`;
+  history.replaceState(null, '', next);
+}
+
+function mergeInstructionAndClipboard(instruction: string, clipboardBody: string): string {
+  const head = instruction.replace(/\s+$/u, '');
+  const body = clipboardBody;
+  if (!head) return body;
+  if (!body) return head;
+  return `${head}\n\n${body}`;
+}
+
+function fillComposeTextarea(textarea: HTMLElement, text: string): void {
+  while (textarea.firstChild) {
+    textarea.removeChild(textarea.firstChild);
+  }
+  const p = document.createElement('p');
+  if (text.length === 0) {
+    p.appendChild(document.createElement('br'));
+  } else {
+    p.textContent = text;
+  }
+  textarea.appendChild(p);
+  textarea.focus();
+
+  const range = document.createRange();
+  const sel = window.getSelection();
+  range.selectNodeContents(textarea);
+  range.collapse(false);
+  sel?.removeAllRanges();
+  sel?.addRange(range);
+
+  textarea.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function scheduleSendIfNeeded(shouldSend: boolean): void {
+  if (!shouldSend) return;
+  setTimeout(() => {
+    const sendButton =
+      document.querySelector<HTMLButtonElement>('button[aria-label*="送信"]') ||
+      document.querySelector<HTMLButtonElement>('button[aria-label*="Send"]') ||
+      document.querySelector<HTMLButtonElement>('button.send-button') ||
+      Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(
+        (btn) =>
+          btn.getAttribute('aria-label')?.includes('送信') ||
+          btn.getAttribute('aria-label')?.includes('Send')
+      );
+    if (sendButton && !sendButton.disabled) {
+      sendButton.click();
+    }
+  }, 500);
+}
+
+function removeClipboardFallbackUi(): void {
+  document.getElementById(CLIPBOARD_FALLBACK_HOST_ID)?.remove();
+}
+
+function showClipboardPasteFallback(options: {
+  instruction: string;
+  shouldSend: boolean;
+  initialSearch: string;
+  getTextarea: () => HTMLElement | null;
+}): void {
+  removeClipboardFallbackUi();
+
+  const host = document.createElement('div');
+  host.id = CLIPBOARD_FALLBACK_HOST_ID;
+  host.setAttribute('role', 'region');
+  host.setAttribute('aria-label', 'Clipboard paste helper');
+  host.style.cssText = [
+    'position:fixed',
+    'bottom:24px',
+    'right:24px',
+    'z-index:2147483646',
+    'display:flex',
+    'align-items:center',
+    'gap:8px',
+    'padding:10px 12px',
+    'border-radius:8px',
+    'background:rgba(32,33,36,0.95)',
+    'color:#e8eaed',
+    'font:13px/1.4 system-ui,sans-serif',
+    'box-shadow:0 2px 12px rgba(0,0,0,0.35)',
+  ].join(';');
+
+  const label = document.createElement('span');
+  label.textContent = 'Clipboard could not be read automatically.';
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.textContent = 'Paste from clipboard';
+  btn.style.cssText = [
+    'cursor:pointer',
+    'border:none',
+    'border-radius:6px',
+    'padding:6px 12px',
+    'background:#8ab4f8',
+    'color:#202124',
+    'font:inherit',
+    'font-weight:600',
+  ].join(';');
+
+  btn.addEventListener('click', () => {
+    void (async () => {
+      let clipboardBody: string;
+      try {
+        clipboardBody = await navigator.clipboard.readText();
+      } catch {
+        return;
+      }
+      const textarea = options.getTextarea();
+      if (!textarea) return;
+      const merged = mergeInstructionAndClipboard(options.instruction, clipboardBody);
+      fillComposeTextarea(textarea, merged);
+      removeClipboardFallbackUi();
+      stripClipboardParamFromUrl();
+      sessionStorage.setItem(CLIPBOARD_HANDLED_SEARCH_KEY, options.initialSearch);
+      scheduleSendIfNeeded(options.shouldSend);
+    })();
+  });
+
+  host.append(label, btn);
+  document.body.appendChild(host);
+}
+
 export function clearAndFocusTextarea(): void {
   let attempts = 0;
   const maxAttempts = 10;
@@ -156,14 +295,23 @@ export function clearAndFocusTextarea(): void {
 }
 
 export function setQueryFromUrl(): void {
-  const urlParams = new URLSearchParams(window.location.search);
+  const initialSearch = window.location.search;
+  const urlParams = new URLSearchParams(initialSearch);
   const path = window.location.pathname;
 
   const isNewChat = path === '/app' || path === '/app/';
   const query = isNewChat ? urlParams.get('q') : null;
   const queryThread = urlParams.get('qt');
-  const text = query || queryThread;
-  if (!text) return;
+  const instructionText = query || queryThread || '';
+  const clipboardWanted = isNewChat && isClipboardParamTruthy(urlParams.get('clipboard'));
+
+  if (clipboardWanted) {
+    if (sessionStorage.getItem(CLIPBOARD_HANDLED_SEARCH_KEY) === initialSearch) {
+      return;
+    }
+  }
+
+  if (!instructionText && !clipboardWanted) return;
 
   const send = urlParams.get('send');
   const shouldSend = send === null || send === 'true' || send === '1';
@@ -180,41 +328,39 @@ export function setQueryFromUrl(): void {
     if (textarea) {
       clearInterval(interval);
 
-      while (textarea.firstChild) {
-        textarea.removeChild(textarea.firstChild);
-      }
-      const p = document.createElement('p');
-      p.textContent = text;
-      textarea.appendChild(p);
-      textarea.focus();
-
-      const range = document.createRange();
-      const sel = window.getSelection();
-      range.selectNodeContents(textarea);
-      range.collapse(false);
-      sel?.removeAllRanges();
-      sel?.addRange(range);
-
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
-
-      if (shouldSend) {
-        setTimeout(() => {
-          const sendButton =
-            document.querySelector<HTMLButtonElement>('button[aria-label*="送信"]') ||
-            document.querySelector<HTMLButtonElement>('button[aria-label*="Send"]') ||
-            document.querySelector<HTMLButtonElement>('button.send-button') ||
-            Array.from(
-              document.querySelectorAll<HTMLButtonElement>('button')
-            ).find(
-              (btn) =>
-                btn.getAttribute('aria-label')?.includes('送信') ||
-                btn.getAttribute('aria-label')?.includes('Send')
-            );
-          if (sendButton && !sendButton.disabled) {
-            sendButton.click();
+      if (clipboardWanted) {
+        void (async () => {
+          let clipboardBody: string;
+          try {
+            clipboardBody = await navigator.clipboard.readText();
+          } catch {
+            if (instructionText.length > 0) {
+              fillComposeTextarea(textarea, instructionText);
+            }
+            showClipboardPasteFallback({
+              instruction: instructionText,
+              shouldSend,
+              initialSearch,
+              getTextarea: () =>
+                document.querySelector<HTMLElement>(
+                  'div[contenteditable="true"][role="textbox"]'
+                ),
+            });
+            return;
           }
-        }, 500);
+
+          const merged = mergeInstructionAndClipboard(instructionText, clipboardBody);
+          fillComposeTextarea(textarea, merged);
+          removeClipboardFallbackUi();
+          stripClipboardParamFromUrl();
+          sessionStorage.setItem(CLIPBOARD_HANDLED_SEARCH_KEY, initialSearch);
+          scheduleSendIfNeeded(shouldSend);
+        })();
+        return;
       }
+
+      fillComposeTextarea(textarea, instructionText);
+      scheduleSendIfNeeded(shouldSend);
     } else if (attempts >= maxAttempts) {
       clearInterval(interval);
     }

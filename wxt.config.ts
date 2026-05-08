@@ -6,7 +6,7 @@ export default defineConfig({
     version: '3.1',
     description: 'Gemini Chat UI improvements with keyboard shortcuts',
     author: 'toyama0919',
-    permissions: ['storage'],
+    permissions: ['storage', 'clipboardRead'],
     host_permissions: [
       'https://gemini.google.com/*',
       'https://www.google.co.jp/*',
