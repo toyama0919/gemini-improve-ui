@@ -43,11 +43,18 @@ class DOMAnalyzer {
         'aside',
       ],
       sidebarToggle: [
+        'button[aria-label="サイドバーを閉じる"]',
+        'button[aria-label="Close sidebar"]',
+        '[data-test-id="side-nav-sparkle-button"]',
+        '[data-test-id="side-nav-toggle"]',
+        'button[aria-label="サイドバーを開く"]',
+        'button[aria-label="Open sidebar"]',
         'button[aria-label*="メインメニュー"]',
         'button[aria-label*="Main menu"]',
         'button[data-test-id="side-nav-menu-button"]',
       ],
       chatHistory: [
+        'gem-nav-list-item[data-test-id="conversation"] > a[href^="/app/"]',
         '.conversation[role="button"]',
         '[data-test-id="conversation"]',
         '.conversation-items-container .conversation',

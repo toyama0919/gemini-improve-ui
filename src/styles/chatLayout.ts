@@ -6,8 +6,18 @@ export const CHAT_LAYOUT_CUSTOM_CSS = `
     .side-nav-entry-container {
       display: none !important;
     }
-    /* Notebook sidebar list (any column; scoped selectors missed real DOM) */
+    /* Notebook sidebar list (legacy + current DOM) */
     project-sidenav-list {
+      display: none !important;
+    }
+    /* Top actions: new chat, search, library, Gem (lr26 sidebar) */
+    bard-sidenav .top-action-list,
+    bard-sidenav mat-nav-list.top-action-list-scrollable {
+      display: none !important;
+    }
+    /* Notebook section (keep「最近」/ Recent chats for End-key navigation) */
+    bard-sidenav expandable-section:has(button[aria-label*="ノートブック"]),
+    bard-sidenav expandable-section:has(button[aria-label*="Notebook"]) {
       display: none !important;
     }
     mat-drawer-content,

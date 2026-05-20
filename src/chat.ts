@@ -419,19 +419,51 @@ export function getAllActionButtons(): HTMLElement[] {
   });
 }
 
+const SIDEBAR_CLOSE_SELECTORS = [
+  'button[aria-label="サイドバーを閉じる"]',
+  'button[aria-label="Close sidebar"]',
+] as const;
+
+const SIDEBAR_OPEN_SELECTORS = [
+  '[data-test-id="side-nav-sparkle-button"]',
+  '[data-test-id="side-nav-toggle"]',
+  '[data-test-id="side-nav-menu-button"]',
+  'button[aria-label="サイドバーを開く"]',
+  'button[aria-label="Open sidebar"]',
+  'button[aria-label*="Main menu"]',
+  'button[aria-label*="メインメニュー"]',
+] as const;
+
+function queryFirstVisible(selectors: readonly string[]): HTMLElement | null {
+  for (const selector of selectors) {
+    const el = document.querySelector<HTMLElement>(selector);
+    if (el && el.offsetParent !== null) return el;
+  }
+  return null;
+}
+
 export function findSidebarToggleButton(): HTMLElement | null {
+  // Prefer close when the drawer is open (Gemini shows both open + close in some layouts).
   return (
-    document.querySelector<HTMLElement>('[data-test-id="side-nav-toggle"]') ||
-    document.querySelector<HTMLElement>('button[aria-label*="メニュー"]') ||
-    document.querySelector<HTMLElement>('button[aria-label*="menu"]') ||
-    document.querySelector<HTMLElement>('button[aria-label*="Menu"]')
+    queryFirstVisible(SIDEBAR_CLOSE_SELECTORS) ||
+    queryFirstVisible(SIDEBAR_OPEN_SELECTORS)
   );
 }
 
 export function isSidebarOpen(): boolean {
-  const sidenav = document.querySelector('mat-sidenav');
-  if (!sidenav) return true;
-  return sidenav.classList.contains('mat-drawer-opened');
+  if (queryFirstVisible(SIDEBAR_CLOSE_SELECTORS)) return true;
+
+  const bardSidenav = document.querySelector('bard-sidenav');
+  if (bardSidenav) {
+    return bardSidenav.getBoundingClientRect().width > 100;
+  }
+
+  const matSidenav = document.querySelector('mat-sidenav, mat-drawer');
+  if (matSidenav) {
+    return matSidenav.classList.contains('mat-drawer-opened');
+  }
+
+  return false;
 }
 
 export function toggleSidebar(): void {

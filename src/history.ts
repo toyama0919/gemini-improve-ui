@@ -1,16 +1,26 @@
 // Chat history selection functionality
 
-import { clearAndFocusTextarea } from './chat';
+import { clearAndFocusTextarea, isSidebarOpen, toggleSidebar } from './chat';
 
 let selectedHistoryIndex = 0;
 let historySelectionMode = false;
 
+const HISTORY_ITEM_SELECTORS = [
+  'gem-nav-list-item[data-test-id="conversation"] > a[href^="/app/"]',
+  '.conversation-items-container .conversation[data-test-id="conversation"]',
+  'bard-sidenav .conversation[data-test-id="conversation"]',
+] as const;
+
+const SIDEBAR_OPEN_DELAY_MS = 350;
+
 function getHistoryItems(): HTMLElement[] {
-  return Array.from(
-    document.querySelectorAll<HTMLElement>(
-      '.conversation-items-container .conversation[data-test-id="conversation"]'
-    )
-  );
+  for (const selector of HISTORY_ITEM_SELECTORS) {
+    const items = Array.from(document.querySelectorAll<HTMLElement>(selector)).filter(
+      (el) => el.getBoundingClientRect().height > 0
+    );
+    if (items.length > 0) return items;
+  }
+  return [];
 }
 
 function highlightHistory(index: number): void {
@@ -64,12 +74,29 @@ export function exitHistorySelectionMode(): void {
   });
 }
 
+function applyHistoryHighlight(): void {
+  if (!historySelectionMode) return;
+  highlightHistory(selectedHistoryIndex);
+}
+
 export function enterHistorySelectionMode(): void {
   historySelectionMode = true;
   if (document.activeElement) {
     (document.activeElement as HTMLElement).blur();
   }
-  highlightHistory(selectedHistoryIndex);
+
+  if (getHistoryItems().length > 0) {
+    applyHistoryHighlight();
+    return;
+  }
+
+  if (!isSidebarOpen()) {
+    toggleSidebar();
+    window.setTimeout(applyHistoryHighlight, SIDEBAR_OPEN_DELAY_MS);
+    return;
+  }
+
+  applyHistoryHighlight();
 }
 
 export function isHistorySelectionMode(): boolean {

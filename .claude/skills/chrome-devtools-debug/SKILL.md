@@ -22,7 +22,7 @@ Chrome拡張のデバッグワークフロー。WXT dev server + Chrome DevTools
 
 ```bash
 npm run build
-./dev.sh start        # .output/chrome-mv3/ をロードして起動
+./dev.sh start        # dist/chrome-mv3/ をロードして起動
 ./dev.sh start --fg   # フォアグラウンド (Ctrl+C で停止)
 ./dev.sh start --test # テストチャットURLも開く
 ```
@@ -54,7 +54,7 @@ curl http://localhost:9222/json/list
 
 ```bash
 ./dev.sh dev
-# → Chromeが自動で開く (port 9222)
+# → WXT が dist/chrome-mv3-dev/ にビルド、Chrome がそのフォルダをロード (port 9222)
 # → ファイルを保存すると拡張が自動リロード
 # → DevTools MCPはport 9222に接続済み
 ```
@@ -152,32 +152,13 @@ entrypoints/
 - DevToolsで `--chat-max-width` CSS変数を確認
 - ハードリロード (Cmd+Shift+R)
 
-**Googleログインできない（「このブラウザは安全でない可能性があります」）**
+**Google ログインが切れる / ログインできない**
 
-WXT の automation フラグが Google に検知される。`wxt.config.ts` に以下が必要:
-```typescript
-chromiumArgs: [
-  '--disable-blink-features=AutomationControlled',
-  '--exclude-switches=enable-automation',
-]
-```
-それでもブロックされる場合は `./dev.sh start` でまずログインしてプロファイルを作成する:
-```bash
-./dev.sh start   # WXTなしで Chrome を起動 → Google ログイン
-./dev.sh stop    # ログイン後に停止
-./dev.sh dev     # 以降は dev で OK（プロファイルにログイン状態が保持される）
-```
+WXT が web-ext 経由で Chrome を起動すると `--disable-sync` などが付き、Google ログインが保持されない。`wxt.config.ts` は `runner.disabled: true`、`./dev.sh dev` が Chrome を起動する。
 
 **Chrome Canary が起動してしまう**
 
-`wxt.config.ts` の `runner.binaries.chrome` に明示的にパスを指定:
-```typescript
-runner: {
-  binaries: {
-    chrome: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-  },
-}
-```
+`dev.sh` の `CHROME_BINARY` を通常の Google Chrome パスに合わせる。
 
 **CDP connection closed before response to Extensions.loadUnpacked**
 

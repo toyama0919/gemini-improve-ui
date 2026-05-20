@@ -15,14 +15,7 @@ export default defineConfig({
   extensionApi: 'chrome',
   outDir: 'dist',
   runner: {
-    binaries: {
-      chrome: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-    },
-    chromiumArgs: [
-      '--remote-debugging-port=9222',
-      `--user-data-dir=${process.cwd()}/.chrome-devtools-mcp`,
-      '--exclude-switches=enable-automation',
-    ],
-    startUrls: ['https://gemini.google.com/app'],
+    // web-ext adds --disable-sync / --use-mock-keychain; ./dev.sh dev launches Chrome instead.
+    disabled: true,
   },
 });
